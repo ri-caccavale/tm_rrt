@@ -1,0 +1,10 @@
+:- module(csv).
+:- export csv_read / 3.
+:- export csv_read_row / 2.
+:- comment(summary, "Utilities to manipulate comma-separated (csv) format").
+:- comment(author, "Joachim Schimpf").
+:- comment(date, "$Date: 2014/01/07 00:06:23 $").
+:- comment(copyright, "2010 by author").
+:- comment(categories, ["Interfacing"]).
+:- comment(csv_read / 3, [summary : "Read a file containing comma separated values (csv format)", args : ["File" : "File name (string or atom)", "Rows" : "List of lists (output)", "Options" : "List of options"], amode : (csv_read(+, -, +) is det), desc : html("<p>\n        Reads a file containing comma separated values, and returns the\n        file content as a list.  The file may have an optional .csv suffix.\n    </p><p>\n        The result list contains one element for each record in the file.\n        Each list element is itself a list, representing a data record.\n        The data elements are either numbers (if they can be interpreted\n        as numbers by ECLiPSe's number_string/2 predicate), or otherwise\n        strings.\n    </p><p>\n        No options are currently supported.\n    </p>\n    "), see_also : [number_string / 2, csv_read_row / 2]]).
+:- comment(csv_read_row / 2, [summary : "Read one row of comma separated values (approximate)", args : ["Stream" : "Stream name or handle", "RowList" : "List of numbers and strings, or 'end_of_file' (output)"], amode : (csv_read_row(+, -) is det), desc : html("<p>\n        Reads one row of comma separated values from Stream, and returns\n        the result as a list.  On end of file, returns the atom 'end_of_file'.\n    </p><p>\n        The result list contains one element for each field in the record.\n        The data elements are either numbers (if they can be interpreted\n        as numbers by ECLiPSe's number_string/2 predicate), or otherwise\n        strings.\n    </p><p>\n        Shortcomings: as oppsed to csv_read/3, this predicate here uses the\n        ECLiPSe parser to read rows, and does not implement the cvs format\n        fully.  E.g. empty fields are not handled and yield a syntax error.\n    </p>\n    "), see_also : [number_string / 2, csv_read / 3]]).

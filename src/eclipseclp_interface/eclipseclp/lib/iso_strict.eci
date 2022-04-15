@@ -1,0 +1,69 @@
+:- module(iso_strict).
+:- export initialization(eclipse_language : error(148, pragma(iso(strict)))).
+:- export chtab(96, string_quote).
+:- export chtab(34, list_quote).
+:- reexport true / 0, fail / 0, ! / 0, (',') / 2, (;) / 2, (->) / 2, catch / 3, (=) / 2, (\=) / 2, var / 1, atom / 1, integer / 1, float / 1, atomic / 1, compound / 1, nonvar / 1, number / 1, callable / 1, ground / 1, acyclic_term / 1, (@=<) / 2, (==) / 2, (\==) / 2, (@<) / 2, (@>) / 2, (@>=) / 2, functor / 3, arg / 3, (=..) / 2, copy_term / 2, current_predicate / 1, close / 1, close / 2, nl / 0, nl / 1, throw / 1, write / 1, write / 2, writeq / 1, writeq / 2, write_canonical / 1, write_canonical / 2, (\+) / 1, (once) / 1, false / 0, repeat / 0, char_code / 2, halt / 0, (:) / 2 from eclipse_language.
+:- export syntax_option(not nl_in_quotes).
+:- export syntax_option(iso_escapes).
+:- export syntax_option(iso_base_prefix).
+:- export syntax_option(iso_restrictions).
+:- export syntax_option(plus_is_no_sign).
+:- export syntax_option(doubled_quote_is_quote).
+:- export syntax_option(no_array_subscripts).
+:- export syntax_option(bar_is_no_atom).
+:- export syntax_option(no_attributes).
+:- export syntax_option(no_curly_arguments).
+:- export syntax_option(blanks_after_sign).
+:- export syntax_option(float_needs_point).
+:- export syntax_option(limit_arg_precedence).
+:- reexport (abolish) / 1, asserta / 1, assertz / 1, at_end_of_stream / 0, at_end_of_stream / 1, atom_concat / 3, atom_codes / 2, atom_chars / 2, atom_length / 2, char_conversion / 2, clause / 2, current_char_conversion / 2, current_input / 1, current_op / 3, current_output / 1, flush_output / 0, flush_output / 1, get_byte / 1, get_byte / 2, get_char / 1, get_char / 2, get_code / 1, get_code / 2, halt / 1, number_chars / 2, number_codes / 2, op / 3, peek_byte / 1, peek_byte / 2, peek_char / 1, peek_char / 2, peek_code / 1, peek_code / 2, put_byte / 1, put_byte / 2, put_code / 1, put_code / 2, put_char / 1, put_char / 2, retract / 1, retractall / 1, set_input / 1, set_output / 1, set_stream_position / 2, sub_atom / 5, subsumes_term / 2, unify_with_occurs_check / 2 from iso.
+:- export call / 1.
+:- export call / 2.
+:- export call / 3.
+:- tool(call / 1, call_ / 2).
+:- tool(call / 2, call_ / 3).
+:- tool(call / 3, call_ / 4).
+:- export compare / 3.
+:- export sort / 2.
+:- export keysort / 2.
+:- export term_variables / 2.
+:- export findall / 3.
+:- tool(findall / 3, findall_ / 4).
+:- export bagof / 3.
+:- tool(bagof / 3, bagof_ / 4).
+:- export setof / 3.
+:- tool(setof / 3, setof_ / 4).
+:- export open / 3.
+:- export open / 4.
+:- export stream_property / 2.
+:- export read / 1.
+:- tool(read / 1, read_ / 2).
+:- export read / 2.
+:- tool(read / 2, read_ / 3).
+:- export read_term / 2.
+:- tool(read_term / 2, read_term_ / 3).
+:- export read_term / 3.
+:- tool(read_term / 3, read_term_ / 4).
+:- export write_term / 2.
+:- tool(write_term / 2, write_term_ / 3).
+:- export write_term / 3.
+:- tool(write_term / 3, write_term_ / 4).
+:- export set_prolog_flag / 2.
+:- tool(set_prolog_flag / 2, set_prolog_flag_ / 3).
+:- export current_prolog_flag / 2.
+:- tool(current_prolog_flag / 2, current_prolog_flag_ / 3).
+:- export (is) / 2.
+:- tool((is) / 2, is_ / 3).
+:- export (>=) / 2.
+:- export (>) / 2.
+:- export (=<) / 2.
+:- export (<) / 2.
+:- export (=:=) / 2.
+:- export (=\=) / 2.
+:- comment(categories, ["Compatibility"]).
+:- comment(summary, "Strict ISO Prolog compatibility library").
+:- comment(author, "Joachim Schimpf, Coninfer Ltd").
+:- comment(copyright, 'Joachim Schimpf, Coninfer Ltd').
+:- comment(date, "$Date: 2013/11/29 03:56:46 $").
+:- comment(see_also, [library(multifile), library(iso), library(iso_light)]).
+:- comment(desc, html("\n<h3>Overview</h3>\n    This library provides an implementation of Standard Prolog as\n    defined in ISO/IEC 13211-1 (Information Technology, Programming\n    Languages, Prolog, Part 1, General Core, 1995) and the technical\n    corrigenda ISO/IEC 13211-1 TC1 (2007) and TC2 (2012).\n    The library is provided in source form.\n    <P>\n    This library aims at providing a \"strict mode\" as required by ISO 13211-1,\n    paragraph 5.1.e.  For non-strict versions, see library(iso) and\n    library(iso_light).\n    <P>\n<h3>Usage</h3>\n    The effect of this compatibility library is (with minor exceptions)\n    local to the module where it is loaded.  An ISO-program should always\n    be contained in a separate module, starting with a directive like\n    <PRE>\n    :- module(myisomodule, [], iso_strict).\n    </PRE>\n    Here, the last argument of the module/3 directive indicates the language.\n    It is not advisable to use \":-lib(iso_strict)\" or\n    \":-ensure_loaded(library(iso_strict))\" within an eclipse_language module,\n    because this would lead to import conflicts between the different\n    versions of built-in predicates.\n    <P>\n    Alternatively, in order to use ISO-Prolog without having different\n    modules, one can invoke eclipse with a \"-L iso_strict\" command line option,\n    or set the ECLIPSEDEFFAULTLANGUAGE environment variable to 'iso_strict'.\n    This will launch eclipse with a default module accepting 'iso_strict'\n    language instead of the usual 'eclipse_language'.\n    <P>\n<h3>Specification of implementation defined features</h3>\n    <DL>\n    <DT>6.5 Processor characted set</DT>\n\t<DD>The PCS is the ISO 8859-1 character set.  Classification of\n\textended characters: 7f-a0 layout; a1-bf, d7, f7 graphic;\n\tc0-d6, d8-f6, f8-ff alphanumeric.</DD>\n    <DT>6.6 Collating sequence</DT>\n\t<DD>The collating sequence is that of the ISO 8859-1 character set</DD>\n    <DT>7.1.2.2 Character codes</DT>\n\t<DD>Each character maps to a corresponding byte</DD>\n    <DT>7.1.4.1 Characters</DT>\n\t<DD>As in the ISO 8859-1 character set</DD>\n    <DT>7.2.1 Variable term order</DT>\n\t<DD>Older variables precede newer variables</DD>\n    <DT>7.4.2.4,5 op/3 and char_conversion/2</DT>\n\t<DD>An operator or character-conversion defined in a directive is\n\teffective at runtime, and only in the module in which it occurs</DD>\n    <DT>7.4.2.6 initialization/1</DT>\n\t<DD>Initialization goals are executed in the order in which they\n\toccur in the Prolog text</DD>\n    <DT>7.4.2.7 include/1</DT>\n\t<DD>The argument is a file name atom according to ECLiPSe's canonical\n\tfile name syntax, or a term of the form library(atom)</DD>\n    <DT>7.4.2.8 ensure_loaded/1</DT>\n\t<DD>The argument is a file name atom according to ECLiPSe's canonical\n\tfile name syntax, or a term of the form library(atom).  A file will\n\tbe loaded on the first occurrence of ensure_loaded/1 in a prolog text,\n\tand if the file has been modified since the time it was first loaded.\n\t</DD>\n    <DT>7.4.2.7 set_prolog_flag/2</DT>\n\t<DD>Flag setting are effective at runtime and globally (except for\n\ta few module-local flags in non-strict mode, see set_flag/2)</DD>\n    <DT>7.5.1 Preparing for execution</DT>\n\t<DD>See the eclipse_language built-ins, menu items and command line\n\toptions for compiling, loading and module handling, and also the\n\tinstructions for using library(iso) or library(iso_strict)</DD>\n    <DT>7.7.1,3 Execution and Initialization</DT>\n\t<DD>See the general ECLiPSe facilities, i.e. toplevel, graphical\n\tuser interface and command line options</DD>\n    <DT>7.10.1 Sources and sinks</DT>\n\t<DD>See open/3,4</DD>\n    <DT>7.10.2.6 Text streams</DT>\n\t<DD>Text streams are very similar to binary streams, no characters\n\tare implicitly inserted or removed.  The nl/0,1 predicates emit\n\tan operating system and device dependent newline sequence.</DD>\n    <DT>7.10.2.8,11 Stream positions</DT>\n\t<DD>File, string, and null streams can be (re)positioned</DD>\n    <DT>7.10.2.9 End position of a stream</DT>\n\t<DD>The end position of a stream is the same as the position that\n\ta character appended to the stream would have</DD>\n    <DT>7.10.2.11 Stream options</DT>\n\t<DD>The default eof_action is error</DD>\n    <DT>7.10.2.13 Stream properties</DT>\n\t<DD>File names are atoms according to ECLiPSe's canonical file name\n\tsyntax.</DD>\n    <DT>7.11 Flags</DT>\n\t<DD>Fixed values: bounded=false, min_integer and max_integer fail,\n\tinteger_rounding_function=toward_zero, max_arity=unbounded,\n\tchar_conversion=off.\n\tDefault values: double_quotes=chars, debug=off.\n\tIf debug=on, the ECLiPSe tracer is active.  In non-strict mode,\n\tthere is an additional flag max_predicate_arity, which indicates\n\tthe limit on predicate arity (there is no limit on term arity).\n\t</DD>\n    <DT>7.12.1 Effect of an error</DT>\n\t<DD>The implementation defined error term argument is normally the\n\tpredicate indicator of the culprit goal.  For syntax errors, it is\n\ta term describing the error location.</DD>\n    <DT>8.15.4 call/N</DT>\n\t<DD>The maximum N is given by the flag max_predicate_arity (255)</DD>\n    <DT>8.17.1 set_prolog_flag/2</DT>\n\t<DD>The admissible flag values are the ones defined by ISO-Prolog (for\n\tiso_strict), plus those accepted by ECLiPSe's set_flag/2 (for iso)</DD>\n    <DT>8.17.3,4 halt/0,1</DT>\n\t<DD>Exits the OS process with the given return code (or 0)</DD>\n    <DT>9 Evaluable functors</DT>\n        The 'exceptional values' are realized as follows: 'float_overflow'\n\tleads to a floating point infinity result; 'underflow' leads to\n\ta floating point denormalized value result; 'zero_divisor' leads\n\tto a floating point infinity result in the case of floats,\n\tor an evaluation_error(zero_divisor) in the case of integers;\n\t'int_overflow' does not occur and might lead to running out of\n\tmemory instead.\n    <DT>9.3 Other arithmetic operations</DT>\n\t<DD>When min/2 or max/2 are used with mixed integer and float\n\targuments, the integer is coerced to float, and the result\n\tcomputed by comparing two floats</DD>\n    <DT>9.4 Bitwise arithmetic operations</DT>\n\t<DD>The bitwise arithmetic operations behave as if operating on\n\tan unlimited length two's complement representation</DD>\n    </DL>\n\n<h3>Implementation specific features</h3>\n    These are only available with library(iso), not with library(iso_strict)!\n    <DL>\n    <DT>7.10.2.11 Stream options</DT>\n\t<DD>For additional stream options, see open/4</DD>\n    <DT>7.10.2.12 Options on stream closure</DT>\n\t<DD>None</DD>\n    <DT>7.10.2.13 Stream properties</DT>\n\t<DD>For additional stream properties, see get_stream_info/3</DD>\n    <DT>7.10.3 Read options</DT>\n\t<DD>For additional read options, see read_term/3</DD>\n    <DT>7.10.4 Write options</DT>\n\t<DD>For additional stream options, see write_term/3</DD>\n    <DT>7.11 Flags</DT>\n\t<DD>For additional Prolog flags, see get_flag/2</DD>\n    </DL>\n\n<h3>Remaining deviations from Standard</h3>\n    <OL>\n    <LI>The write predicates output extra spaces</LI>\n    <LI>The char_conversion flag is always off, meaning that character\n    conversion is not applied to prolog texts or on term input.  However,\n    char_conversion/2 and current_char_conversion/2 predicates are operational.\n    </OL>\n    ")).

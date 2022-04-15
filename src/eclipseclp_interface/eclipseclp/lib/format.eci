@@ -1,0 +1,12 @@
+:- module(format).
+:- export format / 2.
+:- tool(format / 2, format_ / 3).
+:- export format / 3.
+:- tool(format / 3, format_ / 4).
+:- comment(categories, ["Compatibility"]).
+:- comment(summary, "Partially implements the format/2,3 predicate").
+:- comment(author, "Joachim Schimpf").
+:- comment(copyright, "Cisco Systems, Coninfer Ltd").
+:- comment(date, "$Date: 2013/02/09 20:03:23 $").
+:- comment(format / 2, [summary : "Print formatted data", args : ["Format" : "Format string (string, atom, chars or codes)", "Args" : "A list of terms"], amode : (format(++, +) is det), see_also : [format / 3, library(quintus)]]).
+:- comment(format / 3, [summary : "Print formatted data", args : ["Stream" : "A stream handle or alias", "Format" : "Format string (string, atom, chars or codes)", "Args" : "A list of terms"], amode : (format(+, ++, +) is det), see_also : [printf / 3, library(quintus)], desc : html("<P>\r\n    \tThis is a partial implementation of the format/3 predicate as\r\n\timplemented in several Prolog systems.  It simply maps the format\r\n\tstring to ECLiPSe's printf/3 formats, and therefore supports only\r\n\tthose formats which are compatible.\r\n</P>")]).

@@ -1,0 +1,91 @@
+:- module(iso_light).
+:- reexport eclipse_language except floor / 2, ceiling / 2, current_op / 3, round / 2, truncate / 2, (^) / 2, (^) / 3, (is) / 2, (>) / 2, (<) / 2, (>=) / 2, (=<) / 2, (=:=) / 2, (=\=) / 2, (abolish) / 1, asserta / 1, assertz / 1, atom_length / 2, clause / 2, get_char / 1, get_char / 2, put_char / 1, put_char / 2, retract / 1.
+:- export op(0, fy, abolish).
+:- export op(0, fy, dynamic).
+:- export syntax_option(not nl_in_quotes).
+:- export syntax_option(iso_escapes).
+:- export syntax_option(iso_base_prefix).
+:- export syntax_option(iso_restrictions).
+:- export syntax_option(plus_is_no_sign).
+:- export syntax_option(doubled_quote_is_quote).
+:- export syntax_option(bar_is_no_atom).
+:- export syntax_option(blanks_after_sign).
+:- export syntax_option(float_needs_point).
+:- export syntax_option(limit_arg_precedence).
+:- export chtab(96, string_quote).
+:- export chtab(34, list_quote).
+:- export op(200, xfx, **).
+:- export (abolish) / 1.
+:- export asserta / 1.
+:- export assertz / 1.
+:- export at_end_of_stream / 0.
+:- export at_end_of_stream / 1.
+:- export atom_concat / 3.
+:- export atom_codes / 2.
+:- export atom_chars / 2.
+:- export atom_length / 2.
+:- export char_conversion / 2.
+:- export clause / 2.
+:- export current_char_conversion / 2.
+:- export current_input / 1.
+:- export current_output / 1.
+:- export current_prolog_flag / 2.
+:- export flush_output / 0.
+:- export flush_output / 1.
+:- export get_byte / 1.
+:- export get_byte / 2.
+:- export get_char / 1.
+:- export get_char / 2.
+:- export get_code / 1.
+:- export get_code / 2.
+:- export halt / 1.
+:- export initialization / 1.
+:- export number_chars / 2.
+:- export number_codes / 2.
+:- export peek_byte / 1.
+:- export peek_byte / 2.
+:- export peek_char / 1.
+:- export peek_char / 2.
+:- export peek_code / 1.
+:- export peek_code / 2.
+:- export put_byte / 1.
+:- export put_byte / 2.
+:- export put_char / 1.
+:- export put_char / 2.
+:- export put_code / 1.
+:- export put_code / 2.
+:- export retract / 1.
+:- export set_input / 1.
+:- export set_output / 1.
+:- export set_prolog_flag / 2.
+:- export set_stream_position / 2.
+:- export stream_property / 2.
+:- export sub_atom / 5.
+:- export subsumes_term / 2.
+:- export unify_with_occurs_check / 2.
+:- tool(initialization / 1, initialization / 2).
+:- tool(current_prolog_flag / 2, current_prolog_flag_ / 3).
+:- tool(set_prolog_flag / 2, set_prolog_flag_ / 3).
+:- export (is) / 2.
+:- tool((is) / 2, is_ / 3).
+:- export (>=) / 2.
+:- export (>) / 2.
+:- export (=<) / 2.
+:- export (<) / 2.
+:- export (=:=) / 2.
+:- export (=\=) / 2.
+:- reexport multifile.
+:- tool((abolish) / 1, abolish_ / 2).
+:- tool(asserta / 1, asserta_ / 2).
+:- tool(assertz / 1, assertz_ / 2).
+:- tool(retract / 1, retract_ / 2).
+:- tool(clause / 2, clause_ / 3).
+:- export current_op / 3.
+:- tool(current_op / 3, current_op_ / 4).
+:- comment(categories, ["Compatibility"]).
+:- comment(summary, "ISO Prolog compatibility library (light version)").
+:- comment(author, "Joachim Schimpf, Coninfer Ltd").
+:- comment(copyright, "Cisco Systems, Inc (2006), Coninfer Ltd (modifications 2007-2012)").
+:- comment(date, "$Date: 2014/10/18 00:21:06 $").
+:- comment(see_also, [library(multifile), library(iso_strict), library(iso)]).
+:- comment(desc, html("<h3>Overview</h3>\n    This library is identical to library(iso), except that ISO exception\n    handling is not implemented.  See library(iso).\n")).

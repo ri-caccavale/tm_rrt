@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+
+
+<launch>
+	<node pkg="tm_rrt" type="tm_rrt" name="tm_rrt" output="screen" >
+		<param name="domain_file" type="string" value="PLAN_nofree_1c2p.prolog" /> -->
+		<!-- <param name="domain_file" type="string" value="PLAN_nofree_3c6p (anomaly2.25).prolog" /> -->
+		<param name="planner_type" type="string" value="simple" />
+		<param name="task_selector" type="int" value="0" />
+		<param name="number_of_runs" type="int" value="30" />
+		
+		<param name="w_b" type="double" value="1.0" />
+		<param name="w_t" type="double" value="5.0" />
+		<param name="path_len" type="double" value="0.9" />
+	</node>
+</launch>

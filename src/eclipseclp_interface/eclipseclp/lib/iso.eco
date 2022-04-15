@@ -1,0 +1,4 @@
+:-(module(iso)).
+:-(pragma(deprecated_warnings(not_reexports))).
+:-(reexport(iso_light)).
+:-(ensure_loaded(iso_error)).
