@@ -12,44 +12,6 @@ int main(int argc, char** argv) {
     
     ros::init(argc, argv, "tm_rrt");
     
-//    //VrepSimulation vrep;
-//    GazeboSimulation gazebo;
-//    gazebo.test(argc, argv);
-//    std::cout<<"after sim creation"<<std::endl;
-//    return 0;
-    
-    //FCLsimulation fcls;
-    //fcls.test<double>(argc, argv);
-    //std::cout<<"after sim creation"<<std::endl;
-    //return 0;
-    
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_1c2p.prolog"); //case1
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_2c4p.prolog"); //case2
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_3c6p.prolog"); //case3
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_4c8p.prolog"); //case4
-
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_2c4p (anomaly2.0).prolog"); //case2.0
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_2c4p (anomaly2.1).prolog"); //case2.1
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_3c6p (anomaly2.2).prolog"); //case2.2
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_3c6p (anomaly2.25).prolog"); //case2.25
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_3c6p (anomaly2.3).prolog"); //case2.3
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_4c8p (anomaly2.4).prolog"); //case2.4 //TOO HARD
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_4c8p (anomaly2.5).prolog"); //case2.5
-
-    /* OLD
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_2c5p (anomaly2.1).prolog"); //case2.1
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_3c6p (anomaly2.2).prolog"); //case2.2
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_3c6p (anomaly2.3).prolog"); //case2.3
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_3c6p (anomaly2.4).prolog"); //case2.4
-    */
-    
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_2c3p (PlanRob).prolog"); //case5
-
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_2c4p (local minima).prolog"); //case6
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_3c6p (anomaly2).prolog"); //case7
-
-    //TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "PLAN_nofree_4c7p (anomaly3).prolog"); //case8
-
     //get prameters from ROS
 
     //DOMAIN FILE IS NECESSARY

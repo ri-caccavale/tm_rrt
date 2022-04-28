@@ -1,7 +1,0 @@
-#! /bin/sh
-ECLIPSEDIR="${ECLIPSEDIR:-/home/hargalaten/catkin_ws/src/seed/eclipseclp}"
-LD_LIBRARY_PATH="$ECLIPSEDIR/lib/x86_64_linux:$LD_LIBRARY_PATH"
-DAVINCIHOME="${DAVINCIHOME:-$ECLIPSEDIR/daVinci/x86_64_linux}"
-JRE_HOME="${JRE_HOME:-}"
-export ECLIPSEDIR LD_LIBRARY_PATH DAVINCIHOME JRE_HOME
-exec "/home/hargalaten/catkin_ws/src/seed/eclipseclp/lib/x86_64_linux/eclipse.exe" "$@"

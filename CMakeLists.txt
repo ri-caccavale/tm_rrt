@@ -103,16 +103,6 @@ catkin_package(
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g" )
 
 ##---Header
-#Set location of the .h files for eclipse prolog
-SET( ECLIPSE_SEED_DIR ${PROJECT_SOURCE_DIR}/src/eclipseclp_interface/eclipseclp )
-SET( ECLIPSE_HEADER_PATH ${PROJECT_SOURCE_DIR}/src/eclipseclp_interface/eclipseclp/include/x86_64_linux )
-#---
-
-##---Libraries
-SET( ECLIPSE_LIB_PATH ${PROJECT_SOURCE_DIR}/src/eclipseclp_interface/eclipseclp/lib/x86_64_linux )
-#---
-
-include_directories( ${ECLIPSE_HEADER_PATH} )
 
 #Set location of catkin workspace
 #SET( CATKIN_WORKSPACE $ENV{HOME}/catkin_ws )
@@ -135,7 +125,8 @@ endif()
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  ${PROJECT_SOURCE_DIR}/src/eclipseclp_interface
+  /usr/lib/swi-prolog/include
+  ${PROJECT_SOURCE_DIR}/src/swipl_interface
 )
 
 ## Declare a cpp library
@@ -149,8 +140,8 @@ add_executable(tm_rrt
       src/tm_rrt.cpp
       src/planners/planner_simple.cpp
       src/planners/planner_divided_BSF.cpp
-      src/main.cpp 
-      src/eclipseclp_interface/Eclipseclp_interface.cpp
+      src/main.cpp
+      src/swipl_interface/swipl_interface.cpp
       )
 
 ## Add cmake target dependencies of the executable/library
@@ -162,7 +153,7 @@ target_link_libraries(tm_rrt  ${catkin_LIBRARIES}
 	opencv_core 
 	opencv_highgui
 	opencv_imgproc
-	${PROJECT_SOURCE_DIR}/src/eclipseclp_interface/eclipseclp/lib/x86_64_linux/libeclipse.so
+  /usr/lib/swi-prolog/lib/x86_64-linux/libswipl.so
 )
 
 

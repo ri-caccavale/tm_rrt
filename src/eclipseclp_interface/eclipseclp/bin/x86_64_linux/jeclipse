@@ -1,7 +1,0 @@
-#! /bin/sh
-ECLIPSEDIR="${ECLIPSEDIR:-/home/hargalaten/catkin_ws/src/seed/eclipseclp}"
-LD_LIBRARY_PATH="$ECLIPSEDIR/lib/x86_64_linux:$LD_LIBRARY_PATH"
-JRE_HOME="${JRE_HOME:-}"
-CLASSPATH="$ECLIPSEDIR/lib/eclipse.jar:${JRE_HOME}/lib/rt.jar"
-export ECLIPSEDIR JRE_HOME
-exec "${JRE_HOME}/bin/java" -Xss2m  -Declipse.directory="$ECLIPSEDIR" -classpath "$CLASSPATH" com.parctechnologies.eclipse.JEclipse "$@"

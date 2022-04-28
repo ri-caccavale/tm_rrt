@@ -39,7 +39,8 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 
-#include "eclipseclp_interface/Eclipseclp_interface.h"
+//#include "eclipseclp_interface/Eclipseclp_interface.h"
+#include "swipl_interface/swipl_interface.h"
 
 //#include "tm_rrt_vrep_sim.h"
 //#include "tm_rrt_gazebo_sim.h"
@@ -47,10 +48,6 @@
 //#include "tm_rrt_fcl.h"
 
 //#include <time.h>
-
-//README:
-// made 16.04.2018
-// A-star-planner is working (with world-frame mapping) ...but is too slow
 
 #define MOTIONPLANNER_STEP_FS 0.1 //m/s
 #define MOTIONPLANNER_STEP_LS 0.1 //m/s
@@ -605,7 +602,7 @@ public:
 //attributes
 
     
-    Eclipseclp_interface *eclipse;
+    swipl_interface *swi;
 
     //the "w" com is 0
     //std::vector<Pose3d> obstacles;

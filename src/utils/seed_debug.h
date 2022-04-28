@@ -33,4 +33,17 @@ const std::string back_blue      = "\033[44m";
 const std::string back_magenta   = "\033[45m";
 const std::string back_cyan      = "\033[46m";
 const std::string back_white     = "\033[47m";
+
+
+}
+
+//convert string to number considering the std::locale::classic()
+//  NOTE: the decimal are always separated by "." independently from the current system
+//        this should be more reliable than atof and stod
+inline double ston(std::string str){
+    float number = 0.0f;
+    std::istringstream istr(str);
+    istr.imbue(std::locale::classic());
+    istr >> number;
+    return number;
 }
