@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
 
     //get debug value 
     bool param_debug = get_ros_param<bool>("/tm_rrt/debug",false);
-    //get planner type (simple, naive, divided)
+    //get planner type (simple, divided)
     std::string param_planner_type = get_ros_param<std::string>("/tm_rrt/planner_type","simple");
     //get task selector (best = 0, uniform = 1, montecarlo = 2)
     int param_task_selector = get_ros_param<int>("/tm_rrt/task_selector",0);
@@ -52,16 +52,7 @@ int main(int argc, char** argv) {
     tmRRT.draw_points(tmRRT.S_init.pose, tmRRT.compute_dynamic_obstacles(tmRRT.S_init,void_obs) );
     
     tmRRT.rviz_image_plan();
-       
-    //            for(auto j=1; j<=10; j++){
-    //            
-    //            std::cout<<std::endl<<"TM_PLANNER: TRAIN NUMBER "<<j<<std::endl;
-    //            //path_len = 0.5 + (0.1*j);
-    //            //std::cout<<std::endl<<"\t path_len: "<<path_len<<std::endl<<std::endl;
-    //            
-    //            w_b = 1.0;
-    //            w_t = w_b * (j*0.5);
-    //            std::cout<<std::endl<<"\t w_b: "<<w_b<<" w_t: "<<w_t<<" (rate: "<<(j*0.5)<<")"<<std::endl<<std::endl;
+
     int j = 1;
 
     //execute it several times
@@ -75,9 +66,6 @@ int main(int argc, char** argv) {
         //tmRRT.second_chance_heuristic = true;
 
         //set parameters
-        //tmRRT.w_b = 1.0; //weight of the path (bottom) 
-        //tmRRT.w_t = 5.0; //weight of the task (top)
-        //tmRRT.path_len = 0.9; //max length of the path (default value)
         tmRRT.w_b = param_w_b; //weight of the path (bottom) 
         tmRRT.w_t = param_w_t; //weight of the task (top)
         tmRRT.path_len = param_path_len; //max length of the path (default value)
@@ -90,12 +78,9 @@ int main(int argc, char** argv) {
         //tmRRT.mode = TaskSelector::MONTECARLO;
         tmRRT.mode = TaskSelector(param_task_selector);
 
-        //tmRRT.plan = tmRRT.plan_rrt_simple(tmRRT.S_init, tmRRT.S_goal, tmRRT.plan, 300, 5, tmRRT.path_len); //TM-RRT
-        //tmRRT.plan = tmRRT.plan_rrt_naive(tmRRT.S_init, tmRRT.S_goal, tmRRT.plan, 300, 5, tmRRT.path_len);
-        //tmRRT.plan = tmRRT.plan_divided_BFS(tmRRT.S_init, tmRRT.S_goal, tmRRT.plan, 300, 5, tmRRT.path_len, 2.0);
-        if(param_planner_type == "simple")
+        if(param_planner_type == "simple") //TM-RRT
             tmRRT.plan_rrt_simple(tmRRT.S_init, tmRRT.S_goal, tmRRT.plan, param_planner_timeout, param_rrt_horizon, tmRRT.path_len);
-        else if(param_planner_type == "divided")
+        else if(param_planner_type == "divided") //BFS+RRT
             tmRRT.plan_divided_BFS(tmRRT.S_init, tmRRT.S_goal, tmRRT.plan, param_planner_timeout, param_rrt_horizon, tmRRT.path_len, param_bsf_timeout);
         else{
             std::cout<<ansi::red<<"ERROR: planner of type "<<param_planner_type<<" does not exists"<<ansi::end<<std::endl;
@@ -116,6 +101,7 @@ int main(int argc, char** argv) {
     tmRRT.rrt_report.push_back("");
 
     std::cout << std::endl << "RRT REPORT: " << std::endl;
+    std::cout << "\t" << "planning_time" << "\t" << "explored_states" << "\t" << "rejected_states" << "\t" << "plan_size" << "\t" << "plan_length" << "\t" << "combined_cost" << "\t" << "number_of_tasks"<<"\t"<< "BFS_time"<<std::endl;
     for (auto i = 0; i < tmRRT.rrt_report.size(); i++)
         std::cout << i + 1 << "\t" << tmRRT.rrt_report[i] << std::endl;
 

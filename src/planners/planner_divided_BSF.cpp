@@ -61,7 +61,7 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
     Pose3d p_random;
     State S_random;
 
-    //FIND NEAREST NODE OF THE RRT (here we use the weighted-distance!)
+    //FIND NEAREST NODE OF THE RRT 
     State S_near;
     int S_near_index = 0;
     int S_near_cluster = 0;
@@ -89,7 +89,7 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
 
     //-- INITIALIZE task planner, tp_plans to reach the tp_states
     std::list< std::unordered_map < std::string, bool> > tp_states;
-    std::list< std::list<Task> > tp_plans;
+    std::list< std::list<Task> > tp_plans; //buffer of plans to be explored
 
     std::list<Task> current_plan;
 
@@ -98,6 +98,7 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
 
     int tp_trial_counter = 0;
 
+    //randomize the order of how the tasks are explored
     std::cout<<"TP, randomizing tasks: "<<std::endl;
     std::vector<Task> original_task_set = task_set;
     task_set.clear();
@@ -115,7 +116,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
     std::cout<<"TP, loading applicable tasks: "<<std::endl;
     //initialize open nodes
     for(auto i=0; i<task_set.size(); i++){  //normal order
-    //for(int i=task_set.size()-1; i>=0; i--){  //inverted oreder
         if(is_applicable(task_set[i],start.var)){
             std::cout<<task_set[i].name<<" ";
             tp_states.push_back(start.var);
@@ -133,7 +133,7 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
     //while you have time
     while ( ( rrt_timeout < 0 || elapsed_secs < rrt_timeout ) && !plan_found) {
 
-        //-- BFS task planner
+        
         bool tp_found = false; //find next solution
 
         //you should start again from skretch
@@ -142,6 +142,7 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
 
         tp_starting_time = elapsed_secs;
 
+        //-- BFS started
         while( ( rrt_timeout < 0 || elapsed_secs < rrt_timeout ) && !tp_found && tp_states.size() > 0){
 
             timer.tic();
@@ -158,6 +159,7 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
             //std::cout<<std::endl;
             //sleep(1);
 
+            //if goal state is reached (symbolic distance is 0)
             if(distance(new_v_state, goal.var) < 0.1){
                 tp_found  = true;
 
@@ -169,9 +171,10 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
                 //elapsed_secs -= (elapsed_secs - tp_starting_time);
 
                 continue;
-                //now current_plan is the provided plan
+                //now current_plan is the BFS plan
             }
 
+            //otherwise, add new tasks to the current plan and push the new plans into the buffer
             for(auto i=0; i<task_set.size(); i++){
                 if(is_applicable(task_set[i],new_v_state )){
                     tp_states.push_back(new_v_state);
@@ -187,7 +190,7 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
             elapsed_secs += timer.toc(); 
             
         }
-        //--
+        //-- BFS ended
 
         if(tp_found){
             for (auto it = current_plan.begin(); it != current_plan.end(); ++it){

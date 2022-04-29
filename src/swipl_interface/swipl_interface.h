@@ -19,7 +19,7 @@
 #include <SWI-Prolog.h>
 
 
-//LTM class
+//swipl_interface class
 class swipl_interface {
 public:
 
@@ -29,7 +29,7 @@ public:
 
     ~swipl_interface();
 
-    static std::vector<std::string> instance2vector(std::string);
+    static std::vector<std::string> functor2vector(std::string);
 
     static std::vector<std::string> list2vector(std::string);
     

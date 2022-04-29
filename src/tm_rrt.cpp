@@ -433,17 +433,17 @@ std::vector<Task> TM_RRTplanner::tasks_from_PROLOG(std::vector<std::string>& tas
         std::cout << "\t " << task_name[i] << " pre_cond:" << std::endl;
         //LOAD PRE_COND
         //tsk[i].pre_conditions = eclipse->query("getConstraint(" + (task_name[i]) + ")");
-        tsk[i].pre_conditions = swipl_interface::list2vector(swipl_interface::instance2vector(swi->query("constraint(" + (task_name[i]) + ",X)"))[2]);
+        tsk[i].pre_conditions = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("constraint(" + (task_name[i]) + ",X)"))[2]);
 
         std::cout << "\t " << task_name[i] << " post_cond:" << std::endl;
         //LOAD POST_COND
         //tsk[i].post_conditions = eclipse->query("getEffect(" + (task_name[i]) + ")");
-        tsk[i].post_conditions = swipl_interface::list2vector(swipl_interface::instance2vector(swi->query("effect(" + (task_name[i]) + ",X)"))[2]);
+        tsk[i].post_conditions = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("effect(" + (task_name[i]) + ",X)"))[2]);
 
         std::cout << "\t " << task_name[i] << " target:" << std::endl;
         //LOAD TARGET
         //tsk[i].target = eclipse->query("getTarget(" + (task_name[i]) + ")")[0];
-        tsk[i].target = swipl_interface::list2vector(swipl_interface::instance2vector(swi->query("target(" + (task_name[i]) + ",X)"))[2])[0];
+        tsk[i].target = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("target(" + (task_name[i]) + ",X)"))[2])[0];
 
         std::cout << "\t ----------" << std::endl;
     }
@@ -457,12 +457,12 @@ void TM_RRTplanner::domain_from_PROLOG() {
     //load VARIABLES:
 
     //var_set = eclipse->query("getVarList");
-    var_set = swipl_interface::list2vector(swipl_interface::instance2vector(swi->query("findall(V,variable(V),L)"))[3]);
+    var_set = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("findall(V,variable(V),L)"))[3]);
 
     //load TASKS:
 
     //std::vector<std::string> task_name = eclipse->query("getTaskList");
-    std::vector<std::string> task_name = swipl_interface::list2vector(swipl_interface::instance2vector(swi->query("findall(T,task(T),L)"))[3]);
+    std::vector<std::string> task_name = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("findall(T,task(T),L)"))[3]);
 
     for (int i = 0; i < task_name.size(); i++) {
 
@@ -474,17 +474,17 @@ void TM_RRTplanner::domain_from_PROLOG() {
         std::cout << "\t " << task_name[i] << " pre_cond:" << std::endl;
         //LOAD PRE_COND
         //tsk.pre_conditions = eclipse->query("getConstraint(" + (task_name[i]) + ")");
-        tsk.pre_conditions = swipl_interface::list2vector(swipl_interface::instance2vector(swi->query("constraint(" + (task_name[i]) + ",X)"))[2]);
+        tsk.pre_conditions = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("constraint(" + (task_name[i]) + ",X)"))[2]);
 
         std::cout << "\t " << task_name[i] << " post_cond:" << std::endl;
         //LOAD POST_COND
         //tsk.post_conditions = eclipse->query("getEffect(" + (task_name[i]) + ")");
-        tsk.post_conditions = swipl_interface::list2vector(swipl_interface::instance2vector(swi->query("effect(" + (task_name[i]) + ",X)"))[2]);
+        tsk.post_conditions = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("effect(" + (task_name[i]) + ",X)"))[2]);
 
         std::cout << "\t " << task_name[i] << " target:" << std::endl;
         //LOAD TARGET
         //tsk.target = eclipse->query("getTarget(" + (task_name[i]) + ")")[0];
-        tsk.target = swipl_interface::list2vector(swipl_interface::instance2vector(swi->query("target(" + (task_name[i]) + ",X)"))[2])[0];
+        tsk.target = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("target(" + (task_name[i]) + ",X)"))[2])[0];
 
         std::cout << "\t ----------" << std::endl;
 
@@ -494,18 +494,18 @@ void TM_RRTplanner::domain_from_PROLOG() {
     //load SHAPES of objects:
 
     //std::vector<std::string> objects = eclipse->query("getObjectList");
-    std::vector<std::string> objects = swipl_interface::list2vector(swipl_interface::instance2vector(swi->query("findall(O,object(O,S),L)"))[3]);
+    std::vector<std::string> objects = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("findall(O,object(O,S),L)"))[3]);
 
     for (int i = 0; i < objects.size(); i++) {
 
         Object2d obj;
 
         //std::vector<std::string> shapes = eclipse->query("getObjectShapes(" + objects[i] + ")");
-        std::vector<std::string> shapes = swipl_interface::list2vector(swipl_interface::instance2vector(swi->query("object(O,S)"))[2]);
+        std::vector<std::string> shapes = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("object(O,S)"))[2]);
 
         for (int j = 0; j < shapes.size(); j++) {
 
-            std::vector<std::string> shape_vec = swipl_interface::instance2vector(shapes[j]);
+            std::vector<std::string> shape_vec = swipl_interface::functor2vector(shapes[j]);
 
             obj.addShapeRect(ston(shape_vec[1]),
                              ston(shape_vec[2]),
@@ -523,12 +523,12 @@ void TM_RRTplanner::domain_from_PROLOG() {
     //load POSES:
 
     //std::vector<std::string> poses = eclipse->query("getPoseList");
-    std::vector<std::string> poses = swipl_interface::list2vector(swipl_interface::instance2vector(swi->query("findall(pose(P,X,Y,W),pose(P,X,Y,W),L)"))[3]);
+    std::vector<std::string> poses = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("findall(pose(P,X,Y,W),pose(P,X,Y,W),L)"))[3]);
 
     //for each pose
     for (int i = 0; i < poses.size(); i++) {
         //get the elements of the predicate
-        std::vector<std::string> pose_vec = swipl_interface::instance2vector(poses[i]);
+        std::vector<std::string> pose_vec = swipl_interface::functor2vector(poses[i]);
         //store the pose into the pose_map to be retreived during planning
         pose_map[pose_vec[1]] = Pose3d(ston(pose_vec[2]),
                                        ston(pose_vec[3]),
@@ -539,7 +539,7 @@ void TM_RRTplanner::domain_from_PROLOG() {
 
     //load map - if exists -
     //std::vector<std::string> map_vec = eclipse->query("getMap");
-    std::vector<std::string> map_vec = swipl_interface::list2vector(swipl_interface::instance2vector(swi->query("map(M)"))[1]);
+    std::vector<std::string> map_vec = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("map(M)"))[1]);
     if (map_vec.size() > 0) {
         map_file = map_vec[0];
         map_file.erase(std::remove(map_file.begin(), map_file.end(), '"'), map_file.end());
@@ -553,7 +553,7 @@ void TM_RRTplanner::domain_from_PROLOG() {
     std::unordered_map < std::string, bool> tS_goal;
 
     //std::vector<std::string> goal_from_ltm = eclipse->query("getGoalState");
-    std::vector<std::string> goal_from_ltm = swipl_interface::list2vector(swipl_interface::instance2vector(swi->query("goal_state(GS)"))[1]);
+    std::vector<std::string> goal_from_ltm = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("goal_state(GS)"))[1]);
 
     if (goal_from_ltm.size() > 0) {
         for (int i = 0; i < goal_from_ltm.size(); i++)
@@ -570,7 +570,7 @@ void TM_RRTplanner::domain_from_PROLOG() {
     std::unordered_map < std::string, bool> tS_init;
 
     //std::vector<std::string> init_from_ltm = eclipse->query("getInitialState");
-    std::vector<std::string> init_from_ltm = swipl_interface::list2vector(swipl_interface::instance2vector(swi->query("initial_state(GS)"))[1]);
+    std::vector<std::string> init_from_ltm = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("initial_state(GS)"))[1]);
 
     if (init_from_ltm.size() > 0) {
         for (int i = 0; i < init_from_ltm.size(); i++)
@@ -601,7 +601,7 @@ Pose3d TM_RRTplanner::find_pose(std::unordered_map<std::string, bool>& var, std:
     //for each predicate of the state
     for (auto it : var) {
         //parse the predicate 
-        varVector = swipl_interface::instance2vector(it.first);
+        varVector = swipl_interface::functor2vector(it.first);
         //if the predicate is a on(X,Y) one (which means that and object X is "on" an object/pose Y)
         if (it.second && varVector[0] == "on" && varVector[1] == toFind) {
             if (pose_map.find(toFind) != pose_map.end()) //this if should be USELESS
@@ -630,7 +630,7 @@ std::string TM_RRTplanner::get_object_loacation(State &state, std::string object
     std::vector<std::string> v;
     for (auto it : state.var) {
         if (it.second) {
-            v = swipl_interface::instance2vector(it.first);
+            v = swipl_interface::functor2vector(it.first);
             if (v[0] == "on" && v[1] == object_to_find)
                 return v[2];
         }
@@ -734,7 +734,7 @@ std::vector<Point3d> TM_RRTplanner::remove_carrying_from_obstacles(State &state,
 
     for (auto it : state.var) {
         if (it.second) {
-            v = swipl_interface::instance2vector(it.first);
+            v = swipl_interface::functor2vector(it.first);
             if (v[0] == "carry") {
                 carrying_obj = v[1];
                 break;

@@ -23,6 +23,8 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
     std::cout << "GOAL_state: " << std::endl;
     goal.cout(false);
 
+    //NOTE: clusters are used to group all RRT nodes having the same symbolic state
+    //      this is a simple optimization to speed-up the search inside the tree
     RRTcluster rrt_cluster;
     std::vector<int> app = {0};
     rrt_cluster.createCluster(start.var, app);
@@ -156,11 +158,9 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
         best_c_dist = 1000;
         c_dist = 0;
 
+        //find all min-distance clusters
         for (auto i = 0; i < rrt_cluster.size(); i++) {
             c_dist = distance(v_random, rrt_cluster.vars[i]);
-
-            //NOTE: here we have a problem.. the distance is discrete so 
-            // the choice of the best cluster depends on how the list is ordered!!
 
             if (c_dist < best_c_dist) {
                 best_c = i;
@@ -173,10 +173,10 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
             }
         }
 
-        //select randomly the best cluster among those with the same (lowest) distance
+        //select randomly the best cluster among those with the same (min) distance
         best_c = vec_c_best[ iRand(0, vec_c_best.size() - 1) ];
 
-        //find best task from cluster_var to rand_var
+        //find best task from the best cluster_var to the rand_var
         Task t_rand = task_in_direction(rrt_cluster.vars[best_c], v_random, mode); //selector
 
         //if the selected task not exists
@@ -184,8 +184,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
             not_exists_num++;
             continue;
         }
-
-        //t_rand_goal = find_pose(rrt_cluster.vars[best_c], t_rand.target);
 
         //SELECT RANDOM POSE
 
@@ -198,14 +196,8 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
             //p_random = goal.pose;
             p_random = t_rand_goal;
         }
-            //oth.
+        //oth.
         else {
-            //select a random pose within the horizon limit
-            //double rAng = start.pose.w + fRand(-90, 90); //seed_motion_task style
-            //double r1 = fRand(-horizon, horizon);
-            //double r2 = fRand(-horizon, horizon);
-            //p_random = Pose3d(start.pose.x + r1, start.pose.y + r2, rAng);
-
             p_random = Pose3d(fRand(-horizon, horizon), fRand(-horizon, horizon), fRand(-180, 180));
         }
 
@@ -235,23 +227,16 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
         //so... for each cluster
         for (auto i = 0; i < rrt_cluster.size(); i++) {
 
-            //                //optimization -> skip tasks that are already accomplished in the cluster [NOTE] NOT WORKING!!!
-            //                if( rrt_cluster.accomplished[i][t_rand.name] )
-            //                    continue; //try with next cluster (not loosing computation)
-
-
             //compute symm_distance between the random state and the variables in the cluster
             c_symm_dist = distance(S_random.var, rrt_cluster.vars[i]);
 
-            //branch-and-bound -like optimization added 23/12/2021
+            //branch-and-bound -like simple optimization
             if(c_symm_dist > S_near_best_distance)
                 continue;
 
-            //optimization -> skip tasks that are not applicable, this should reject less tasks!
+            //skip tasks that are not applicable in this cluster (reject less samples)
             if (!is_applicable(t_rand, rrt_cluster.vars[i]))
                 continue;
-
-            
 
             //now.. for each node of the cluster
             for (auto j = 0; j < rrt_cluster.nodes[i].size(); j++) {
@@ -264,7 +249,7 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
                     S_near = rrt.node[ rrt_cluster.nodes[i][j] ];
                     //remember, "nodes" is the vector of the indexes of the rrt
                     S_near_index = rrt_cluster.nodes[i][j];
-                    //save also the cluster.. to speedup the insertion
+                    //save also the cluster.. to simplify the insertion
                     S_near_cluster = i;
                     //update the best distance
                     S_near_best_distance = S_near_current_distance;
@@ -281,22 +266,15 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
 
         record_time += tester.toc();
 
-
-        //NEW steer -> perform a path in the direction of p_random
+        //STEERING -> perform a path in the direction of p_random
         Pose3d task_target_pose = find_pose(S_near.var, t_rand.target);
         std::vector<PlanStepTM> motion_plan = path_in_direction(S_near, S_random, task_target_pose, rrt_step); //works with 0.5m
-        //steer - end
         
+        //optional second chance heuristic (NOT USED)
         if(second_chance_heuristic && motion_plan.size() <= 0){
             
             if(debug_on)
                 std::cout<<ansi::yellow << "second chance!" << ansi::end << std::endl;
-            
-//            //try to move a bit in a random direction
-//            S_random = S_near;
-//            S_random.pose.x += fRand(-0.1,0.1);
-//            S_random.pose.y += fRand(-0.1,0.1);
-//            S_random.pose.w = S_random.pose.w + fRand(-10,10);
             
             //try another node of the rrt ...find an alternative way
             S_near_index = rrt_cluster.nodes[S_near_cluster][ iRand(0,rrt_cluster.nodes[S_near_cluster].size()-1) ];
@@ -307,7 +285,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
 
 
         //if the path is consistent
-        //if( motion_plan.size() != 0 ){
         if (motion_plan.size() > 0) { //non-trivial trajectory
             
             State S_final;
@@ -363,8 +340,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
                     step_new.motion.ls = 0;
                     step_new.motion.ts = 0;
 
-                    //double S_new2_cost = distance(S_new,S_near) + rrt.cost[S_near_index]; //DOES IT UPDATE COST?
-
                     gate_state_count[step_new.task.name]++;
                     
                     int new_id2 = rrt.addNode(S_new2, new_id, S_new_cost, S_new_obs, step_new);
@@ -402,12 +377,10 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
                     //    std::cout<<"   going from "<<S_near_cluster<<" to "<<new_cluster_index<<" via "<<step_new.task.name<<std::endl;
 
                     break; //the rest of the path can be discard!
-                }                    //add the new node to the best cluster (the var_state is the same by construction)
-                else if (i == motion_plan.size() - 1) //this looks faster but absolutely worst!!
+                }                    
+                //add the new node to the best cluster (the var_state is the same by construction)
+                else if (i == motion_plan.size() - 1)
                     rrt_cluster.addToCluster(S_near_cluster, new_id);
-
-                //                //draw new pose
-                //                draw_robot_pose(S_new.pose.x -x, S_new.pose.y -y, S_new.pose.w, S_new, cv::Scalar(255,255,255) );
             }
             
             if(debug_on){
@@ -567,35 +540,5 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
             break;
         }
 
-
-
-
-    //        cout_debug_on = true;
-    //        //std::vector<std::string> vect{ "on(c1,p4)","carrying" };
-    //        std::vector<std::string> vect{ "on(c1,p4)","on(c2,p2)" };
-    //        
-    //        draw_map(S_init.pose,S_goal.pose);
-    //        int clust_id = draw_cluster_poses(rrt, rrt_cluster, vect );
-    //        cout_debug_on = false;
-
-    //        //PLOT ALL THE ELEMENTS OF THE CLUSTER
-    //        std::cout<<"PLOTTING ELEMENTS OF CLUSTER "<<clust_id<<std::endl;
-    //        for(auto j=0; j<rrt_cluster.nodes[clust_id].size(); j++ ){
-    //            std::cout<<"   -out-   "<<std::endl;
-    //            rrt.node[ rrt_cluster.nodes[clust_id][j] ].cout_true();
-    //            rrt.act[ rrt_cluster.nodes[clust_id][j] ].cout();
-    //        }
-
-    /*
-    Pose3d dummy(0,0,0);
-    for(auto i=0; i<rrt_cluster.size(); i++){
-        State toPlot(rrt_cluster.vars[i],dummy);
-        toPlot.cout_true();
-        std::cout<<"\t goal_dist: "<<distance(rrt_cluster.vars[i], goal.var)<<std::endl;
-    }
-     */
-
-    //return the plan
     return rrt_plan;
-
 }
