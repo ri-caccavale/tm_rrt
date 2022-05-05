@@ -5,7 +5,7 @@ The symbolic knowledge along with the problems formulations are available as Pro
 
 The source code of the planner, based on a naive version of the RRT, is available in the ```src/planners/planner_simple.cpp``` file
 
-For comparison pourposes a divided planner based on simple BFS (symbolic) and RRT (geometric) is available in the ```src/planners/divided_BFS.cpp``` file
+For comparison pourposes a divided planner based on simple BFS (symbolic) and RRT (geometric) is available in the ```src/planners/``` file
 
 The code is wrapped in a ROS node allowing fast launch and parameter setting. The output of the node is a table in the terminal showing the performance of the selected planner. In addition a 2D graphical representation of generated plans is available from the /image_plan topic.
 
