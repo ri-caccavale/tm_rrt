@@ -2,53 +2,79 @@
 % PLANNING DOMAIN WITH 1 CART AND 2 POSES
 %
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Problem formulation
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% problem formulation
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Occupancy grid in png for motion planning
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 map(["/maps/map_simple.png"]).
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Symbolic Goal State
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 goal_state([free(p1),on(c1,p4)]).
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Symbolic Initial State 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 initial_state([free(p4),on(c1,p1)]).
 
-% lists of tasks, objects, poses, variables
 
-task(bwPick(X,Y)):-object(X,_),pose(Y,_,_,_).
-task(bwPut(X,Y)):-object(X,_),pose(Y,_,_,_).
-
-object(c1,[
-	shape(-0.625,-0.47,0.0,0.15,0.1,0.01),
-  	shape( 0.625,-0.47,0.0,0.15,0.1,0.01),
-  	shape(-0.625, 0.47,0.0,0.15,0.1,0.01),
-  	shape( 0.625, 0.47,0.0,0.15,0.1,0.01) ]).
-
-pose(p1,2,0,0).
-pose(p4,-2,-2,0).
-
-variable(free(X)):-pose(X,_,_,_).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%State Variables with types for arguments
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+variable(free(X)):- pose(X,_,_,_).
 variable(carry(X)):-object(X,_).
 variable(on(X,Y)):-object(X,_),pose(Y,_,_,_).
 variable(carrying).
 
 
-% lists of targets, effects, constraints
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Operators
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-target(bwPick(X,_),[X]).
-target(bwPut(_,Y),[Y]).
+% Operators - argument types
+operator(bwPick(X,Y)):-object(X,_),pose(Y,_,_,_).
+operator(bwPut(X,Y)):-object(X,_),pose(Y,_,_,_).
 
-effect(bwMoveOn(X,Y),[on(X,Y),-free(Y)]).
-
+% Operators - Effects
 effect(bwPick(X,Y),[-on(X,Y),free(Y),carry(X),carrying]).
-
-effect(bwPut(X,gnd),[-carry(X),free(X),-carrying]).
 effect(bwPut(X,Y),[on(X,Y),-carry(X),-free(Y),-carrying]).
 
-effect(bwFree(X),[free(X)]).
 
-constraint(bwPick(X,Y),[on(X,Y),-carrying]).
+%Operator - Preconditions
+precondition(bwPick(X,Y),[on(X,Y),-carrying]).
+precondition(bwPut(X,Y),[carry(X),free(Y)]).
 
-constraint(bwPut(X,gnd),[carry(X)]).
-constraint(bwPut(X,Y),[carry(X),free(Y)]).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% G function
+% (G function gets geometric information from poses defined below)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+target(bwPick(_,Y),[Y]).
+target(bwPut(_,Y),[Y]).
 
-constraint(bwFree(_),[-carrying]).
-constraint(bwLeaves,[carriyng]).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Domain terms with motion configuration (objects and poses)
+% Objects: objects are associated with bounding boxes
+% Poses: symbolic poses are associated with coordinates in the configuration space   
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Carts 
+object(c1,X):-geometric_bounding(c1,X).
+
+% Poses
+pose(p1,2,0,0).
+pose(p4,-2,-2,0).
+
+% Geometric bounding
+geometric_bounding(_,[
+	shape(-0.625,-0.47,0.0,0.15,0.1,0.01),
+  	shape( 0.625,-0.47,0.0,0.15,0.1,0.01),
+  	shape(-0.625, 0.47,0.0,0.15,0.1,0.01),
+  	shape( 0.625, 0.47,0.0,0.15,0.1,0.01) ]).
 

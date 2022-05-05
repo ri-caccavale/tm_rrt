@@ -14,11 +14,11 @@
 		<!-- ECMR case2.3 -->
 		<!-- <param name="domain_file" type="string" value="domain_3c6p.prolog" /> -->
 		<!-- ECMR case2.4 -->
-		 <param name="domain_file" type="string" value="domain_4c8p.prolog" /> 
+		<!-- <param name="domain_file" type="string" value="domain_4c8p.prolog" /> -->
 		<!-- JRAS case3.1 -->
 		<!-- <param name="domain_file" type="string" value="domain_2c4p (anomaly2.0).prolog" /> -->
 		<!-- JRAS case3.2 -->
-		<!-- <param name="domain_file" type="string" value="domain_2c4p (anomaly2.1).prolog" /> -->
+		 <param name="domain_file" type="string" value="domain_2c4p (anomaly2.1).prolog" /> 
 		<!-- JRAS case3.3 -->
 		<!-- <param name="domain_file" type="string" value="domain_3c6p (anomaly2.2).prolog" /> -->
 		<!-- JRAS case3.4 -->
@@ -27,12 +27,12 @@
 		<!-- <param name="domain_file" type="string" value="domain_3c6p (anomaly2.3).prolog" /> -->
 
 		<!-- TM-RRT -->
-		 <param name="planner_type" type="string" value="simple" /> 
+		<!-- <param name="planner_type" type="string" value="simple" /> -->
 		<!-- BFS+RRT -->
-		<!-- <param name="planner_type" type="string" value="divided" /> -->
+		 <param name="planner_type" type="string" value="divided" /> 
 		
 		<param name="task_selector" type="int" value="0" />
-		<param name="number_of_runs" type="int" value="30" />
+		<param name="number_of_runs" type="int" value="120" />
 		
 		<param name="w_b" type="double" value="1.0" />
 		<param name="w_t" type="double" value="5.0" />

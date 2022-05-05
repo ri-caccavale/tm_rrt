@@ -202,6 +202,17 @@ void PlanStepTM::cout() {
     std::cout << "act( " << act.task.name << " " << act.motion.fs << " " << act.motion.ls << " " << act.motion.ts << " )." << std::endl;
 }
 
+std::string PlanStepTM::toString() {
+    //std::cout << "state( ( ";
+    //for (auto it : state.var) {
+    //    std::cout << it.first << ":" << it.second << " ";
+    //}
+    //std::cout << "), ( " << state.pose.x << " " << state.pose.y << " " << state.pose.w << " ) )." << std::endl;
+    std::stringstream ss;
+    ss << "( " << act.task.name << ", (" << act.motion.fs << ", " << act.motion.ls << ", " << act.motion.ts << " ) )";
+    return ss.str();
+}
+
 
 //    ***** RRTree *****    //
 
@@ -373,6 +384,8 @@ TM_RRTplanner::TM_RRTplanner(std::string path_to_node_directory, std::string dom
     image_transport::ImageTransport it(nh);
     image_pub = it.advertise("image_plan", 1);
 
+    plan_pub = nh.advertise<std_msgs::String>("tm_rrt_plan", 1);
+
     x = 0;
     y = 0;
     yaw = 0;
@@ -433,7 +446,7 @@ std::vector<Task> TM_RRTplanner::tasks_from_PROLOG(std::vector<std::string>& tas
         std::cout << "\t " << task_name[i] << " pre_cond:" << std::endl;
         //LOAD PRE_COND
         //tsk[i].pre_conditions = eclipse->query("getConstraint(" + (task_name[i]) + ")");
-        tsk[i].pre_conditions = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("constraint(" + (task_name[i]) + ",X)"))[2]);
+        tsk[i].pre_conditions = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("precondition(" + (task_name[i]) + ",X)"))[2]);
 
         std::cout << "\t " << task_name[i] << " post_cond:" << std::endl;
         //LOAD POST_COND
@@ -462,7 +475,7 @@ void TM_RRTplanner::domain_from_PROLOG() {
     //load TASKS:
 
     //std::vector<std::string> task_name = eclipse->query("getTaskList");
-    std::vector<std::string> task_name = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("findall(T,task(T),L)"))[3]);
+    std::vector<std::string> task_name = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("findall(T,operator(T),L)"))[3]);
 
     for (int i = 0; i < task_name.size(); i++) {
 
@@ -474,7 +487,7 @@ void TM_RRTplanner::domain_from_PROLOG() {
         std::cout << "\t " << task_name[i] << " pre_cond:" << std::endl;
         //LOAD PRE_COND
         //tsk.pre_conditions = eclipse->query("getConstraint(" + (task_name[i]) + ")");
-        tsk.pre_conditions = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("constraint(" + (task_name[i]) + ",X)"))[2]);
+        tsk.pre_conditions = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("precondition(" + (task_name[i]) + ",X)"))[2]);
 
         std::cout << "\t " << task_name[i] << " post_cond:" << std::endl;
         //LOAD POST_COND
@@ -1729,6 +1742,27 @@ void TM_RRTplanner::rviz_image_plan() {
     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image).toImageMsg();
 
     image_pub.publish(msg);
+}
+
+
+void TM_RRTplanner::ros_publish_plan() {
+
+    std_msgs::String msg;
+
+    std::stringstream ss;
+    ss<<"( ";
+    for(auto i=1; i<plan.size(); i++){
+        ss << plan[i].toString();
+        if(i != plan.size()-1)
+            ss<<",";
+    }
+    ss<<")";
+    
+    msg.data = ss.str();
+    plan_pub.publish(msg);
+
+    std::cout<<"PLAN:"<<std::endl;
+    std::cout<<ss.str()<<std::endl;
 }
 
 

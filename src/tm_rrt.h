@@ -179,6 +179,8 @@ public:
 
     void cout();
 
+    std::string toString();
+
     //state
     State state;
     //step
@@ -329,6 +331,8 @@ public:
     void rviz_plot_plan(std::vector< PlanStepTM > vec);
 
     void rviz_image_plan();
+
+    void ros_publish_plan();
     
     void draw_map();
 
@@ -664,6 +668,9 @@ public:
     ros::NodeHandle nh;
     ros::Publisher marker_pub;
     image_transport::Publisher image_pub;
+
+    //simple plan publishing
+    ros::Publisher plan_pub;
     
 
     tf::TransformListener laser_listener;

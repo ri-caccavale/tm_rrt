@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
     int j = 1;
 
     //execute it several times
-    for (auto i = 0; i < 30; i++) {
+    for (auto i = 0; i < param_number_of_runs; i++) {
 
         tmRRT.plan.clear();
         tmRRT.draw_map();
@@ -96,6 +96,9 @@ int main(int argc, char** argv) {
         
         if(!ros::ok())
             break;
+
+        tmRRT.ros_publish_plan();
+        ros::spinOnce();
     }
 
     tmRRT.rrt_report.push_back("");
