@@ -39,7 +39,9 @@ int main(int argc, char** argv) {
     double param_w_b = get_ros_param<double>("/tm_rrt/w_b",1.0);
     double param_w_t = get_ros_param<double>("/tm_rrt/w_t",5.0);
     double param_path_len = get_ros_param<double>("/tm_rrt/path_len",0.9);
-
+    //go-to-goal probabilities
+    double param_p_s = get_ros_param<double>("/tm_rrt/p_s",0.3);
+    double param_p_c = get_ros_param<double>("/tm_rrt/p_c",0.3);
 
     TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "domains/" + param_domain_file);
 
@@ -63,25 +65,22 @@ int main(int argc, char** argv) {
 
         std::cout << std::endl << "TM_PLANNER: ROUND NUMBER " << i + 1 << std::endl << std::endl;
 
-        //tmRRT.second_chance_heuristic = true;
-
         //set parameters
         tmRRT.w_b = param_w_b; //weight of the path (bottom) 
         tmRRT.w_t = param_w_t; //weight of the task (top)
         tmRRT.path_len = param_path_len; //max length of the path (default value)
 
-        //tmRRT.debug_on = true;
+        tmRRT.P_task_to_goal = param_p_s; //probability to sample the goal symbolic state
+        tmRRT.P_go_to_goal = param_p_c; //probability to sample the goal configuration
+
         tmRRT.debug_on = param_debug;
         
-        //tmRRT.mode = TaskSelector::BEST;
-        //tmRRT.mode = TaskSelector::UNIFORM;
-        //tmRRT.mode = TaskSelector::MONTECARLO;
         tmRRT.mode = TaskSelector(param_task_selector);
 
-        if(param_planner_type == "simple") //TM-RRT
-            tmRRT.plan_rrt_simple(tmRRT.S_init, tmRRT.S_goal, tmRRT.plan, param_planner_timeout, param_rrt_horizon, tmRRT.path_len);
-        else if(param_planner_type == "divided") //BFS+RRT
-            tmRRT.plan_divided_BFS(tmRRT.S_init, tmRRT.S_goal, tmRRT.plan, param_planner_timeout, param_rrt_horizon, tmRRT.path_len, param_bsf_timeout);
+        if(param_planner_type == "tm_rrt") //TM-RRT
+            tmRRT.plan_TM_RRT(tmRRT.S_init, tmRRT.S_goal, tmRRT.plan, param_planner_timeout, param_rrt_horizon, tmRRT.path_len);
+        else if(param_planner_type == "bfs_rrt") //BFS+RRT
+            tmRRT.plan_BFS_RRT(tmRRT.S_init, tmRRT.S_goal, tmRRT.plan, param_planner_timeout, param_rrt_horizon, tmRRT.path_len, param_bsf_timeout);
         else{
             std::cout<<ansi::red<<"ERROR: planner of type "<<param_planner_type<<" does not exists"<<ansi::end<<std::endl;
             return 0;
@@ -91,8 +90,6 @@ int main(int argc, char** argv) {
         cv::putText(tmRRT.image, std::to_string(j) + "." + std::to_string(i + 1), cv::Point(15, 30), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 143, 143), 2);
         tmRRT.draw_plan(tmRRT.S_init.pose);
         tmRRT.rviz_image_plan();
-
-        //std::cout << "obstacles size: " << tmRRT.obstacles.size() << std::endl;
         
         if(!ros::ok())
             break;
@@ -103,34 +100,10 @@ int main(int argc, char** argv) {
 
     tmRRT.rrt_report.push_back("");
 
-    std::cout << std::endl << "RRT REPORT: " << std::endl;
+    std::cout << std::endl << "REPORT: " << std::endl;
     std::cout << "\t" << "planning_time" << "\t" << "explored_states" << "\t" << "rejected_states" << "\t" << "plan_size" << "\t" << "plan_length" << "\t" << "combined_cost" << "\t" << "number_of_tasks"<<"\t"<< "BFS_time"<<std::endl;
     for (auto i = 0; i < tmRRT.rrt_report.size(); i++)
         std::cout << i + 1 << "\t" << tmRRT.rrt_report[i] << std::endl;
-
-    //            }
-
-
-    //std::cout << "TM_PLANNER: optimize " << std::endl;
-    //optimize
-    //plan = random_shortcut_plan(plan);
-
-    /*
-    std::cout << "PLOT-PLAN: " << std::endl;
-    for (auto i = 0; i < tmRRT.plan.size(); i++) {
-        if (tmRRT.plan[i].act.task.name == "") {
-            std::cout << ansi::red;
-            tmRRT.plan[i].cout();
-            std::cout << ansi::end;
-        } else {
-            std::cout << i << "- ";
-            tmRRT.plan[i].cout();
-        }
-
-        std::cout << "->" << std::endl;
-    }
-    */
-
         
     return 0;
 }

@@ -203,11 +203,6 @@ void PlanStepTM::cout() {
 }
 
 std::string PlanStepTM::toString() {
-    //std::cout << "state( ( ";
-    //for (auto it : state.var) {
-    //    std::cout << it.first << ":" << it.second << " ";
-    //}
-    //std::cout << "), ( " << state.pose.x << " " << state.pose.y << " " << state.pose.w << " ) )." << std::endl;
     std::stringstream ss;
     ss << "( " << act.task.name << ", (" << act.motion.fs << ", " << act.motion.ls << ", " << act.motion.ts << " ) )";
     return ss.str();
@@ -405,10 +400,6 @@ TM_RRTplanner::TM_RRTplanner(std::string path_to_node_directory, std::string dom
     path_to_directory = path_to_node_directory;
     
     curr_plan_step = 0;
-
-    
-    second_chance_heuristic = false;
-    
     
     domain_from_PROLOG();
 
@@ -433,48 +424,14 @@ void TM_RRTplanner::set_initial_state(Pose3d &bS_init) {
 
 // ************ SWI Prolog functions ************ //
 
-std::vector<Task> TM_RRTplanner::tasks_from_PROLOG(std::vector<std::string>& task_name) {
-
-    std::vector<Task> tsk(task_name.size());
-
-    //per ogni schema del piano
-    for (int i = 0; i < task_name.size(); i++) {
-
-        //LOAD TASK NAME
-        tsk[i].name = task_name[i];
-
-        std::cout << "\t " << task_name[i] << " pre_cond:" << std::endl;
-        //LOAD PRE_COND
-        //tsk[i].pre_conditions = eclipse->query("getConstraint(" + (task_name[i]) + ")");
-        tsk[i].pre_conditions = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("precondition(" + (task_name[i]) + ",X)"))[2]);
-
-        std::cout << "\t " << task_name[i] << " post_cond:" << std::endl;
-        //LOAD POST_COND
-        //tsk[i].post_conditions = eclipse->query("getEffect(" + (task_name[i]) + ")");
-        tsk[i].post_conditions = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("effect(" + (task_name[i]) + ",X)"))[2]);
-
-        std::cout << "\t " << task_name[i] << " target:" << std::endl;
-        //LOAD TARGET
-        //tsk[i].target = eclipse->query("getTarget(" + (task_name[i]) + ")")[0];
-        tsk[i].target = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("target(" + (task_name[i]) + ",X)"))[2])[0];
-
-        std::cout << "\t ----------" << std::endl;
-    }
-
-    return tsk;
-
-}
-
 void TM_RRTplanner::domain_from_PROLOG() {
 
     //load VARIABLES:
 
-    //var_set = eclipse->query("getVarList");
     var_set = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("findall(V,variable(V),L)"))[3]);
 
     //load TASKS:
 
-    //std::vector<std::string> task_name = eclipse->query("getTaskList");
     std::vector<std::string> task_name = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("findall(T,operator(T),L)"))[3]);
 
     for (int i = 0; i < task_name.size(); i++) {
@@ -486,17 +443,14 @@ void TM_RRTplanner::domain_from_PROLOG() {
 
         std::cout << "\t " << task_name[i] << " pre_cond:" << std::endl;
         //LOAD PRE_COND
-        //tsk.pre_conditions = eclipse->query("getConstraint(" + (task_name[i]) + ")");
         tsk.pre_conditions = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("precondition(" + (task_name[i]) + ",X)"))[2]);
 
         std::cout << "\t " << task_name[i] << " post_cond:" << std::endl;
         //LOAD POST_COND
-        //tsk.post_conditions = eclipse->query("getEffect(" + (task_name[i]) + ")");
         tsk.post_conditions = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("effect(" + (task_name[i]) + ",X)"))[2]);
 
         std::cout << "\t " << task_name[i] << " target:" << std::endl;
         //LOAD TARGET
-        //tsk.target = eclipse->query("getTarget(" + (task_name[i]) + ")")[0];
         tsk.target = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("target(" + (task_name[i]) + ",X)"))[2])[0];
 
         std::cout << "\t ----------" << std::endl;
@@ -506,14 +460,12 @@ void TM_RRTplanner::domain_from_PROLOG() {
 
     //load SHAPES of objects:
 
-    //std::vector<std::string> objects = eclipse->query("getObjectList");
     std::vector<std::string> objects = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("findall(O,object(O,S),L)"))[3]);
 
     for (int i = 0; i < objects.size(); i++) {
 
         Object2d obj;
 
-        //std::vector<std::string> shapes = eclipse->query("getObjectShapes(" + objects[i] + ")");
         std::vector<std::string> shapes = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("object(O,S)"))[2]);
 
         for (int j = 0; j < shapes.size(); j++) {
@@ -535,7 +487,6 @@ void TM_RRTplanner::domain_from_PROLOG() {
 
     //load POSES:
 
-    //std::vector<std::string> poses = eclipse->query("getPoseList");
     std::vector<std::string> poses = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("findall(pose(P,X,Y,W),pose(P,X,Y,W),L)"))[3]);
 
     //for each pose
@@ -551,7 +502,6 @@ void TM_RRTplanner::domain_from_PROLOG() {
     }
 
     //load map - if exists -
-    //std::vector<std::string> map_vec = eclipse->query("getMap");
     std::vector<std::string> map_vec = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("map(M)"))[1]);
     if (map_vec.size() > 0) {
         map_file = map_vec[0];
@@ -565,7 +515,6 @@ void TM_RRTplanner::domain_from_PROLOG() {
     //load the GOAL state:
     std::unordered_map < std::string, bool> tS_goal;
 
-    //std::vector<std::string> goal_from_ltm = eclipse->query("getGoalState");
     std::vector<std::string> goal_from_ltm = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("goal_state(GS)"))[1]);
 
     if (goal_from_ltm.size() > 0) {
@@ -582,7 +531,6 @@ void TM_RRTplanner::domain_from_PROLOG() {
     //load the INITIAL state:
     std::unordered_map < std::string, bool> tS_init;
 
-    //std::vector<std::string> init_from_ltm = eclipse->query("getInitialState");
     std::vector<std::string> init_from_ltm = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("initial_state(GS)"))[1]);
 
     if (init_from_ltm.size() > 0) {
@@ -600,31 +548,15 @@ void TM_RRTplanner::domain_from_PROLOG() {
 
 
 //find the pose of an object, it can recursively search if an object is "on" another one!
-//  NOTE: this function is DOMAIN-DEPENDENT !!!
 Pose3d TM_RRTplanner::find_pose(std::unordered_map<std::string, bool>& var, std::string toFind) {
     std::vector<std::string> varVector;
 
     if (toFind == "")
         std::cout << "WHAT?! null target detected!" << std::endl;
-    //if the target is a pose (e.g. p1) get it from the pose_map
+    //the target is a pose (e.g. p1), get it from the pose_map
     if (pose_map.find(toFind) != pose_map.end())
         return pose_map[toFind];
 
-    //otherwise, it is an object, than find in the state the pose in which the object lies
-    //for each predicate of the state
-    for (auto it : var) {
-        //parse the predicate 
-        varVector = swipl_interface::functor2vector(it.first);
-        //if the predicate is a on(X,Y) one (which means that and object X is "on" an object/pose Y)
-        if (it.second && varVector[0] == "on" && varVector[1] == toFind) {
-            if (pose_map.find(toFind) != pose_map.end()) //this if should be USELESS
-                return pose_map[toFind];
-            else
-            //find the pose of the underlying object
-            return find_pose(var, varVector[2]);
-        }
-    }
-    //std::cout<<"TM_PLANNER WARNING: pose of "<<toFind<<" not found!"<<std::endl;
     return Pose3d(0, 0, 0);
 }
 
@@ -632,13 +564,16 @@ bool TM_RRTplanner::is_pose_reached(Pose3d p1, Pose3d p2) {
     double lin_dist = sqrt(((p1.x - p2.x)*(p1.x - p2.x))+((p1.y - p2.y)*(p1.y - p2.y)));
     double ang_dist = std::abs(p1.w - p2.w);
 
-    //if(lin_dist<=0.02 && ang_dist<=0.5)
-    if (lin_dist <= 0.01 && ang_dist <= 0.5) //simulation
+    //precision of the positioning
+    if (lin_dist <= 0.01 && ang_dist <= 0.5)
         return true;
 
     return false;
 }
 
+//functions to update the configuration state depending on the symbolic state
+
+//retreive object location from state
 std::string TM_RRTplanner::get_object_loacation(State &state, std::string object_to_find) {
     std::vector<std::string> v;
     for (auto it : state.var) {
@@ -648,10 +583,10 @@ std::string TM_RRTplanner::get_object_loacation(State &state, std::string object
                 return v[2];
         }
     }
-    //std::cout<<ansi::red<<"LOCATION OF OBJECT '"<<object_to_find<<"' NOT FOUND!!"<<ansi::end<<std::endl;
     return "";
 }
 
+//compute obstacles from state
 std::vector<Point3d> TM_RRTplanner::compute_dynamic_obstacles(State &state) {
 
     std::vector<Point3d> out_obs;
@@ -660,7 +595,6 @@ std::vector<Point3d> TM_RRTplanner::compute_dynamic_obstacles(State &state) {
 
         if (cout_debug_on) std::cout << "searching for " << it.first << " pose" << std::endl;
 
-        //carrying
         if (!state.var["carry(" + it.first + ")"]) {
 
             if (cout_debug_on) std::cout << it.first << " not carried" << std::endl;
@@ -685,8 +619,7 @@ std::vector<Point3d> TM_RRTplanner::compute_dynamic_obstacles(State &state, std:
     return out_obs;
 }
 
-//WARNING: this function is context specific!!!
-
+//add an object as obstacle
 std::vector<Point3d> TM_RRTplanner::add_object_to_obstacles(std::string obj_name, State &state) {
 
     std::string loc = get_object_loacation(state, obj_name);
@@ -702,17 +635,12 @@ std::vector<Point3d> TM_RRTplanner::add_object_to_obstacles(std::string obj_name
         std::cout << "pose of object " << obj_name << " is " << loc << ": (" << pose.x << "," << pose.y << "," << pose.w << ")" << std::endl;
 
 
-    //simulation[obj_name].setPose(pose);
-    //std::vector<Point3d> new_obstacles = simulation[obj_name].samplePoints(0.01);
-
     std::vector<Point3d> new_obstacles = simulation[obj_name].samplePointsFromPose(pose, 0.1);
 
     //update the obstacles
     return new_obstacles;
 
 }
-
-//WARNING: this function is context specific!!!
 
 std::vector<Point3d> TM_RRTplanner::add_object_to_obstacles(std::string obj_name, State &state, std::vector<Point3d> &obs) {
 
@@ -728,8 +656,6 @@ std::vector<Point3d> TM_RRTplanner::add_object_to_obstacles(std::string obj_name
     if (cout_debug_on)
         std::cout << "pose of object " << obj_name << " is " << loc << ": (" << pose.x << "," << pose.y << "," << pose.w << ")" << std::endl;
 
-    //simulation[obj_name].setPose(pose);
-    //std::vector<Point3d> new_obstacles = simulation[obj_name].samplePoints(0.01);
 
     std::vector<Point3d> new_obstacles = simulation[obj_name].samplePointsFromPose(pose, 0.1);
 
@@ -740,6 +666,7 @@ std::vector<Point3d> TM_RRTplanner::add_object_to_obstacles(std::string obj_name
 
 }
 
+//remove carryied obstacle
 std::vector<Point3d> TM_RRTplanner::remove_carrying_from_obstacles(State &state, std::vector<Point3d> &obs, double consis_margin) {
 
     std::vector<std::string> v;
@@ -760,8 +687,6 @@ std::vector<Point3d> TM_RRTplanner::remove_carrying_from_obstacles(State &state,
 
     return remove_object_from_obstacles(carrying_obj, state, obs, consis_margin);
 }
-
-//WARNING: this function is context specific!!!
 
 std::vector<Point3d> TM_RRTplanner::remove_object_from_obstacles(std::string obj_name, State &state, std::vector<Point3d> &obs, double consis_margin) {
 
@@ -810,7 +735,6 @@ std::vector<Point3d> TM_RRTplanner::remove_object_from_obstacles(std::string obj
  * @return 0 if the pose is colliding, otherwise the distance with the closer
  *      obstacle is returned.
  * 
- * //WARNING: this function is context specific!!!
  */
 double TM_RRTplanner::is_pose_consistent(State &state, double consis_margin) {
 
@@ -818,10 +742,7 @@ double TM_RRTplanner::is_pose_consistent(State &state, double consis_margin) {
 
     updated_obstacles.insert(updated_obstacles.end(), obstacles.begin(), obstacles.end());
 
-    //        std::cout<<"add_obs: "<<tester.toc()<<std::endl;
-
     if (state.var["carrying"])
-        //return is_pose_consistent(state.pose, ROBOT_CARRYING_LENGTH, ROBOT_CARRYING_WIDTH, remove_carrying_from_obstacles(S_init, updated_obstacles, 0.2), consis_margin);
         return is_pose_consistent(state.pose, ROBOT_CARRYING_LENGTH, ROBOT_CARRYING_WIDTH, updated_obstacles, consis_margin);
     else
         return is_pose_consistent(state.pose, ROBOT_DEFAULT_LENGTH, ROBOT_DEFAULT_WIDTH, updated_obstacles, consis_margin);
@@ -835,12 +756,10 @@ double TM_RRTplanner::is_pose_consistent(State &state, double consis_margin) {
  * @return 0 if the pose is colliding, otherwise the distance with the closer
  *      obstacle is returned.
  * 
- * //WARNING: this function is context specific!!!
  */
 double TM_RRTplanner::is_pose_consistent(State &state, std::vector<Point3d> &updated_obstacles, double consis_margin) {
 
     if (state.var["carrying"])
-        //return is_pose_consistent(state.pose, ROBOT_CARRYING_LENGTH, ROBOT_CARRYING_WIDTH, remove_carrying_from_obstacles(S_init, updated_obstacles, 0.2), consis_margin);
         return is_pose_consistent(state.pose, ROBOT_CARRYING_LENGTH, ROBOT_CARRYING_WIDTH, updated_obstacles, consis_margin);
     else
         return is_pose_consistent(state.pose, ROBOT_DEFAULT_LENGTH, ROBOT_DEFAULT_WIDTH, updated_obstacles, consis_margin);
@@ -863,11 +782,8 @@ double TM_RRTplanner::is_pose_consistent(Pose3d pose, double r_len, double r_wid
     double x_obs;
     double y_obs;
     double min_obstacles_distance = 100;
-    //margin of safety (added to the dimensions of the robot)
 
     double dx, dy;
-
-    //std::cout<<"number of obstacles: "<<obs.size()<<std::endl;
 
     //for each obstacle
     for (auto i = 0; i < obs.size(); i++) {
@@ -893,6 +809,8 @@ double TM_RRTplanner::is_pose_consistent(Pose3d pose, double r_len, double r_wid
     return min_obstacles_distance;
 }
 
+//functions to create and draw the occupancy map
+
 void TM_RRTplanner::draw_map() {
     draw_map(S_init.pose, S_goal.pose);
 }
@@ -905,11 +823,6 @@ void TM_RRTplanner::draw_map(Pose3d pose, Pose3d goal) {
     double y_obs;
 
     draw_robot_pose(0, 0, pose.w, ROBOT_DEFAULT_LENGTH, ROBOT_DEFAULT_WIDTH, cv::Scalar(255, 150, 150)); //robot pose
-
-    // draw_robot_pose(2,0,0,cv::Scalar(150,150,150)); //fix pose
-    // draw_robot_pose(0,2,90,cv::Scalar(150,150,150)); //fix pose
-    // draw_robot_pose(-2,0,180,cv::Scalar(150,150,150)); //fix pose
-    // draw_robot_pose(0,-2,-90,cv::Scalar(150,150,150)); //fix pose
 
     //for each laser point (obstacle or not)
     for (auto i = 0; i < laser_points.size(); i++) {
@@ -970,7 +883,6 @@ void TM_RRTplanner::draw_plan(Pose3d pose, int start_index) {
     double y_p;
     //for each step of the plan
     for (auto i = start_index; i < plan.size(); i++) {
-        //std::cout<<"\t"<<i<<": "<<plan[i].pos.x<<", "<<plan[i].pos.y<<", "<<plan[i].pos.w<<std::endl;
         //plot the plan in pose-frame
         x_p = plan[i].state.pose.x - pose.x;
         y_p = plan[i].state.pose.y - pose.y;
@@ -978,9 +890,6 @@ void TM_RRTplanner::draw_plan(Pose3d pose, int start_index) {
         draw_robot_pose(x_p, y_p, plan[i].state.pose.w, plan[i].state, cv::Scalar(255, 0, 0)); //step pose
 
     }
-    // //show the image with CV
-    // cv::imshow("motionPlanner",image);
-    // cv::waitKey(3);
 }
 
 void TM_RRTplanner::draw_plan(std::vector<PlanStepTM> in_plan, Pose3d pose) {
@@ -989,7 +898,6 @@ void TM_RRTplanner::draw_plan(std::vector<PlanStepTM> in_plan, Pose3d pose) {
     double y_p;
     //for each step of the plan
     for (auto i = 1; i < in_plan.size(); i++) {
-        //std::cout<<"\t"<<i<<": "<<plan[i].pos.x<<", "<<plan[i].pos.y<<", "<<plan[i].pos.w<<std::endl;
         //plot the plan in pose-frame
         x_p = in_plan[i].state.pose.x - pose.x;
         y_p = in_plan[i].state.pose.y - pose.y;
@@ -997,9 +905,6 @@ void TM_RRTplanner::draw_plan(std::vector<PlanStepTM> in_plan, Pose3d pose) {
         draw_robot_pose(x_p, y_p, in_plan[i].state.pose.w, in_plan[i].state, cv::Scalar(255, 0, 0) ); //step pose
 
     }
-    // //show the image with CV
-    // cv::imshow("motionPlanner",image);
-    // cv::waitKey(3);
 }
 
 void TM_RRTplanner::draw_robot_pose(double px, double py, double pw, double r_len, double r_wid, cv::Scalar color, double m2px, double offset) {
@@ -1011,7 +916,6 @@ void TM_RRTplanner::draw_robot_pose(double px, double py, double pw, double r_le
     for (int i = 0; i < 4; i++)
         cv::line(image, vertices[i], vertices[(i + 1) % 4], color, 2, 8, 0);
 
-    //cv::arrowedLine(image, cv::Point2f(px*m2px +offset, -py*m2px +offset), cv::Point2f(px*m2px +offset +std::cos(-pw)*10, -py*m2px +offset +std::sin(-pw)*10), color, 2, 8, 0, 0.2);
     //plot a circle corresponding to the robot frontal part
     cv::circle(image, cv::Point2f(vertices[2].x + (vertices[3].x - vertices[2].x) / 2, vertices[2].y + (vertices[3].y - vertices[2].y) / 2), 3, color, 2, 8, 0);
 }
@@ -1034,16 +938,17 @@ void TM_RRTplanner::draw_robot_pose(double px, double py, double pw, State state
         draw_robot_pose(px, py, pw, ROBOT_DEFAULT_LENGTH, ROBOT_DEFAULT_WIDTH, color, m2px, offset);
 }
 
+
 double TM_RRTplanner::symmetric_difference(std::unordered_map<std::string, bool>& v1, std::unordered_map<std::string, bool>& v2) {
-    //v1 is always the small one
 
     double d = 0;
 
     std::unordered_map < std::string, bool>::const_iterator fnd;
-    //copy the small one (time optimization)
+
+    //copy the shortest one (time optimization)
     std::unordered_map < std::string, bool> app = v1;
 
-    //to speed-up the algo, always copy the small one
+    //to speed-up the algo, always copy the short one
     for (auto it : v2) {
         fnd = app.find(it.first);
         if (fnd != app.end()) {
@@ -1064,13 +969,12 @@ double TM_RRTplanner::symmetric_difference(std::unordered_map<std::string, bool>
     return d;
 }
 
+//update the obstacles form the LIDAR (DURING EXECUTION)
 void TM_RRTplanner::update_obstacles_from_LIDAR() {
-    //get obstacles in world-frame
-    //obstacles = robot2world_frame(WMV.get<std::vector < Point3d >> ("laser.obstacles"));
-    //get laser readings in world-frame
-    //laser_points = robot2world_frame(WMV.get<std::vector < Point3d >> ("laser.points"));
+    //NOT USED
 }
 
+//update the obstacles form the map
 void TM_RRTplanner::update_obstacles_from_FILE(std::string path_to_map) {
     cv::Mat map_img;
 
@@ -1082,9 +986,7 @@ void TM_RRTplanner::update_obstacles_from_FILE(std::string path_to_map) {
         map_img = cv::imread(path_to_directory + path_to_map, cv::IMREAD_GRAYSCALE);
     }
 
-    //double px2meters = 0.01; //this means 1 px -> 0.01 meters
     double px2meters = 0.1; //this means 1 px -> 0.1 meters
-    //double px2meters = 0.05; //this means 1 px -> 0.05 meters
 
     double iy, jx;
 
@@ -1099,17 +1001,14 @@ void TM_RRTplanner::update_obstacles_from_FILE(std::string path_to_map) {
             iy = i;
             if (map_img.at<uchar>(j, i) < 128) { //black!
                 //remember that the origin of the map is in the middle of the image!
-                obstacles.push_back(Point3d(-(jx - x_off) * px2meters, -(iy - y_off) * px2meters, 0)); //now it should be in map frame!
+                obstacles.push_back(Point3d(-(jx - x_off) * px2meters, -(iy - y_off) * px2meters, 0)); //now it is in map frame!
             }
         }
     }
 
 }
 
-
-
-//transform a vector of points from robot to world frame
-
+//transform a vector of points from robot to world frame (DURING EXECUTION)
 std::vector<Point3d> TM_RRTplanner::robot2world_frame(std::vector<Point3d> vec) {
     double app_x;
     double app_y;
@@ -1127,12 +1026,7 @@ std::vector<Point3d> TM_RRTplanner::robot2world_frame(std::vector<Point3d> vec) 
 }
 
 
-//see planner.cpp file for its decalration
-//std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal, std::vector<PlanStepTM>& rrt_plan, double rrt_timeout, double horizon, double rrt_step) {
-
-
-//OPTIMIZATION of RRT: find shortcuts bypassing noisy paths
-
+//OPTIMIZATION of RRT: find shortcuts bypassing noisy paths (NOT USED)
 std::vector<PlanStepTM> TM_RRTplanner::random_shortcut_plan(std::vector<PlanStepTM>& in_plan, double rs_timeout) {
     double stop_distance = 0.01;
 
@@ -1167,8 +1061,6 @@ std::vector<PlanStepTM> TM_RRTplanner::random_shortcut_plan(std::vector<PlanStep
             r_start = iRand(0, out_plan.size() - 2);
             r_stop = iRand(r_start + 1, out_plan.size() - 1);
         }
-
-        // std::cout<<"[shortcut-id] start: "<<r_start<<" stop: "<<r_stop<<std::endl;
 
         State s_curr = out_plan[r_start].state;
         State s_stop = out_plan[r_stop].state;
@@ -1217,14 +1109,9 @@ std::vector<PlanStepTM> TM_RRTplanner::random_shortcut_plan(std::vector<PlanStep
                         out_plan.insert(out_plan.begin() + r_start + i + 1, shortcut[i]);
                     }
 
-                }                    //oth. add the pose to the shortcut
+                }                    
+                //oth. add the pose to the shortcut
                 else {
-
-                    // std::cout<<"p_new:  "<<p_new.x<<","<<p_new.y<<","<<p_new.w<<std::endl;
-                    // std::cout<<"p_stop: "<<p_stop.x<<","<<p_stop.y<<","<<p_stop.w<<std::endl;
-                    // std::cout<<"pos: "<<ps.pos.x<<","<<ps.pos.y<<","<<ps.pos.w<<std::endl;
-                    // std::cout<<"act: "<<ps.act.fs<<","<<ps.act.ls<<","<<ps.act.ts<<std::endl;
-                    // std::cout<<"shortcut-push"<<std::endl;
                     //compute the closest obstacle from the shortcut
                     if (shortcut.size() > 0 && shortcut[shortcut.size() - 1].min_obst < obs_dist) {
                         obs_dist = shortcut[shortcut.size() - 1].min_obst;
@@ -1236,7 +1123,8 @@ std::vector<PlanStepTM> TM_RRTplanner::random_shortcut_plan(std::vector<PlanStep
                     //move forward
                     s_curr = s_new;
                 }
-            }                //oth. we collide an obstacle
+            }                
+            //oth. we collide an obstacle
             else {
                 //the shortcut is brocken
                 shortcut_broken = true;
@@ -1252,8 +1140,8 @@ std::vector<PlanStepTM> TM_RRTplanner::random_shortcut_plan(std::vector<PlanStep
     return out_plan;
 }
 
-//get the plan-step that is closer to the current robot pose
 
+//get the plan-step that is closer to the current robot pose (DURING EXECUTION)
 int TM_RRTplanner::get_nearest_plan_step() {
     int near_index = -1;
     double near_lin_distance = 10;
@@ -1264,8 +1152,7 @@ int TM_RRTplanner::get_nearest_plan_step() {
     if (plan.size() == 0)
         return -1;
 
-    //State rob_state(plan[curr_plan_step].state.var, rob_pos);
-    State rob_state(S_init); //this should be called current ...not init!
+    State rob_state(S_init);
     double near_state_distance = 10000;
 
     //for each plan step
@@ -1274,26 +1161,6 @@ int TM_RRTplanner::get_nearest_plan_step() {
             near_state_distance = distance(plan[i].state, rob_state);
             near_index = i;
         }
-
-        /*
-                //get the distance with the robot (considering the rotation)
-                double lin_dist = distance2d(rob_pos,plan[i].state.pose);
-                double ang_dist = std::abs(rob_pos.w - plan[i].state.pose.w);
-                //if i is closer
-                if(lin_dist<near_lin_distance){
-                    //save i
-                    near_lin_distance = lin_dist;
-                    near_ang_distance = ang_dist;
-                    near_index = i;
-                }
-                //oth. if i is the "same" position with better angle
-                else if(std::abs(lin_dist - near_lin_distance)<0.01 && ang_dist<near_ang_distance){
-                    //save i
-                    near_lin_distance = lin_dist;
-                    near_ang_distance = ang_dist;
-                    near_index = i;
-                }
-         */
     }
     return near_index;
 }
@@ -1303,7 +1170,6 @@ bool TM_RRTplanner::check_plan() {
     //if already have a plan
     for (auto i = curr_plan_step; i < plan.size(); i++) {
         //if plan is no more consistent
-        //if(!is_pose_consistent(plan[i].state.pose,robot_length,robot_width,0.0)){
         if (!is_pose_consistent(plan[i].state, 0.0)) {
             //skip the rest of the plan
             std::cout << "plan collide at step " << i << std::endl;
@@ -1432,14 +1298,6 @@ Task TM_RRTplanner::task_in_direction_BEST(std::unordered_map<std::string,bool>&
     else
         best_task = vec_best_task[0];
 
-//        //PLOT
-//        if(going_to_goal && best_distance == 0){
-//            last_task_selected = true;
-//            std::cout<<ansi::yellow<<"last task selected: "<<best_task.name<<ansi::end<<std::endl;
-//        }
-//        else
-//            last_task_selected = false;
-
     return best_task;
 
 }
@@ -1524,7 +1382,6 @@ Step3d TM_RRTplanner::step_in_direction(State& s1, State& s2, State& g) {
 }
 
 //steer functions (RRT)
-
 Step3d TM_RRTplanner::step_in_direction(Pose3d p1, Pose3d p2, Pose3d goal) {
 
     //step sizes
@@ -1535,13 +1392,6 @@ Step3d TM_RRTplanner::step_in_direction(Pose3d p1, Pose3d p2, Pose3d goal) {
     //compute goal distances
     double goal_dist = sqrt(((goal.x - p1.x)*(goal.x - p1.x))+((goal.y - p1.y)*(goal.y - p1.y)));
     double goal_ang_dist = std::abs(goal.w - p1.w);
-    // if( goal_dist < 0.5 ){
-    //     //decrease the step size!
-    //     max_fs_step = max_fs_step * (goal_dist/0.5);
-    //     max_ls_step = max_ls_step * (goal_dist/0.5);
-    //     max_ts_step = max_ts_step * (goal_dist/0.5);
-    // }
-
 
     //compute new step
     deg180 delta_yaw;
@@ -1555,15 +1405,13 @@ Step3d TM_RRTplanner::step_in_direction(Pose3d p1, Pose3d p2, Pose3d goal) {
         delta_yaw = rtod(std::atan2((goal.y - p1.y), (goal.x - p1.x)));
         delta_yaw_rob = delta_yaw - p1.w;
 
-        //s.fs = goal_dist * std::cos(dtor(delta_yaw)); //std::cos(dtor(delta_yaw_rob)); //changed 02/12/2021 to correct the trajectory overshooting 
-        //s.ls = goal_dist * std::sin(dtor(delta_yaw)); //std::sin(dtor(delta_yaw_rob));
-
-        s.fs = goal_dist * std::cos(dtor(delta_yaw_rob)); //changed back 15/12/2021
+        s.fs = goal_dist * std::cos(dtor(delta_yaw_rob));
         s.ls = goal_dist * std::sin(dtor(delta_yaw_rob));
 
         s.ts = goal.w - p1.w;
         s.ts = std::abs(s.ts) > max_ts_step ? sgn(s.ts) * max_ts_step : (double) s.ts;
-    }        //oth. move in p2 direction
+    }        
+    //oth. move in p2 direction
     else {
 
         delta_yaw = rtod(std::atan2((p2.y - p1.y), (p2.x - p1.x)));
@@ -1584,9 +1432,7 @@ Step3d TM_RRTplanner::step_in_direction(Pose3d p1, Pose3d p2, Pose3d goal) {
     return s;
 }
 
-
-//states have to be the same vars!!
-
+//computes small steps in s_stop direction (or until p_goal is reached)
 std::vector< PlanStepTM > TM_RRTplanner::path_in_direction(State& s_start, State& s_stop, Pose3d& p_goal, double stop_distance) {
 
     //std::vector<PlanStepTM> path;
@@ -1596,8 +1442,7 @@ std::vector< PlanStepTM > TM_RRTplanner::path_in_direction(State& s_start, State
 
     double min_obs = -1;
 
-    //compute the dynamic obstacles for the whole path (optimization)
-    //  (they only depends on vars, which are constant)
+    //compute the dynamic obstacles for the whole path
     std::vector<Point3d> state_obstacles = compute_dynamic_obstacles(s_start);
     state_obstacles.insert(state_obstacles.end(), obstacles.begin(), obstacles.end());
 
@@ -1610,7 +1455,6 @@ std::vector< PlanStepTM > TM_RRTplanner::path_in_direction(State& s_start, State
         step_new.state.pose = estimate_new_pose(s_curr.pose, step_new.act.motion);
         step_new.state.var = s_curr.var;
         //if the new step is free from obstacles
-        //double obs_dist = is_pose_consistent(step_new.state); //this was computing dynamic obstacles every time
         double obs_dist = is_pose_consistent(step_new.state, state_obstacles);
         if (obs_dist > 0) {
 
@@ -1637,7 +1481,7 @@ std::vector< PlanStepTM > TM_RRTplanner::path_in_direction(State& s_start, State
                 s_curr = step_new.state;
             }
         }            
-        //oth. we collide an obstacle
+        //oth. collided
         else {
             //return path; //partial path
             return std::vector<PlanStepTM>(); //empty path
@@ -1665,6 +1509,9 @@ Pose3d TM_RRTplanner::estimate_new_pose(Pose3d p, Step3d s) {
 
     return p_new;
 }
+
+
+//publishing/drawing/plotting functions
 
 void TM_RRTplanner::rviz_plot_plan(std::vector< PlanStepTM > vec) {
 
@@ -1710,11 +1557,6 @@ std::vector< PlanStepTM > TM_RRTplanner::transform_plan(std::vector< PlanStepTM 
 
     geometry_msgs::PointStamped p_in, p_out;
 
-
-    //laser_listener.waitForTransform(in_frame, out_frame, ros::now, ros::Duration(0.5));
-
-
-    //wait for transform with map (NOTE: the mutex must be unlocked!)
     if (!laser_listener.waitForTransform(in_frame, out_frame, ros::Time(0), ros::Duration(0.01))) {
         return res;
     }
@@ -1736,8 +1578,6 @@ std::vector< PlanStepTM > TM_RRTplanner::transform_plan(std::vector< PlanStepTM 
 }
 
 void TM_RRTplanner::rviz_image_plan() {
-
-    //std::cout<<"publishing image_plan"<<std::endl;
 
     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image).toImageMsg();
 
@@ -1854,9 +1694,7 @@ void TM_RRTplanner::draw_tree(RRTree rrt, cv::Scalar color, double m2px, double 
 }
 
 
-// on(c2,p3) draw_cluster_poses(RRTree t, RRTcluster c, "on(c2,p3)")
-//returns the id of the cluster
-
+//returns the id of the cluster identified by a specific symbolic state (var)
 int TM_RRTplanner::draw_cluster_poses(RRTree t, RRTcluster c, std::vector<std::string> var) {
     int id = -1;
     for (int i = 0; i < c.nodes.size(); i++) {
@@ -1905,7 +1743,6 @@ void TM_RRTplanner::draw_cluster_poses(RRTree t, RRTcluster c, int id) {
 
 void TM_RRTplanner::cout_cluster(RRTcluster c, State _goal, bool truthset_only) {
 
-    //quick and dirty map in alphabetic order
     std::map < std::string, bool, std::greater < std::string>> ordered;
 
     for (int i = 0; i < c.vars.size(); i++) {
@@ -1933,27 +1770,9 @@ void TM_RRTplanner::cout_cluster(RRTcluster c, State _goal, bool truthset_only) 
     }
 }
 
-//lpots only id, number of nodes and distance
-
 void TM_RRTplanner::cout_less_cluster(RRTcluster c, State _goal) {
     for (int i = 0; i < c.vars.size(); i++) {
         std::cout << "CLUSTER" << i << ": " << c.nodes[i].size() << std::endl;
         std::cout << "\t   distance from goal: " << distance(c.vars[i], _goal.var) << std::endl;
     }
 }
-
-double TM_RRTplanner::median(std::vector<double> scores) {
-    double median;
-    size_t size = scores.size();
-
-    std::sort(scores.begin(), scores.end());
-
-    if (size % 2 == 0) {
-        median = (scores[size / 2 - 1] + scores[size / 2]) / 2;
-    } else {
-        median = scores[size / 2];
-    }
-
-    return median;
-}
-

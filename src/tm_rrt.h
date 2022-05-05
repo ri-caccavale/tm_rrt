@@ -39,13 +39,7 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 
-//#include "eclipseclp_interface/Eclipseclp_interface.h"
 #include "swipl_interface/swipl_interface.h"
-
-//#include "tm_rrt_vrep_sim.h"
-//#include "tm_rrt_gazebo_sim.h"
-//#include "tm_rrt_ompl.h"
-//#include "tm_rrt_fcl.h"
 
 //#include <time.h>
 
@@ -73,15 +67,12 @@ enum class TaskSelector{ BEST, UNIFORM, MONTECARLO };
 
 //task represented in the planning domain
 // pre-conditions/post_conditions are vectors of variables (eg. a -a) to be true
-
 class Task {
 public:
-    //both are in {-1,0,1}
     Task();
 
     Task(std::string nname, std::vector<std::string>& npre, std::vector<std::string>& npost, std::string ntarget);
 
-    // Overload = operator to set from Step3d.
     Task operator=(Task a);
 
     std::string name;
@@ -94,12 +85,10 @@ public:
 
 class Step3d {
 public:
-    //both are in {-1,0,1}
     Step3d();
 
     Step3d(double nfs, double nls, deg180 nts);
 
-    // Overload = operator to set from Step3d.
     Step3d operator=(Step3d a);
 
     double fs; //m/s
@@ -109,14 +98,11 @@ public:
 
 class StepMT {
 public:
-    //both are in {-1,0,1}
     StepMT();
 
     StepMT(double nfs, double nls, deg180 nts, Task& ntask);
 
     StepMT(Step3d nmotion, Task& ntask);
-
-    // Overload = operator to set from Step3d.
 
     inline StepMT operator=(StepMT a) {
         this->motion = a.motion;
@@ -147,7 +133,6 @@ public:
 
     std::string toString(bool true_only, bool symbolic_only);
 
-    //std::vector<bool> var;
     std::unordered_map<std::string, bool> var;
     Pose3d pose;
 
@@ -186,7 +171,7 @@ public:
     //step
     StepMT act;
     double cost; //cost from the start point
-    double min_obst; //cummulative distance from obstacles
+    double min_obst; //distance from obstacles (for statistics)
 };
 
 class RRTree {
@@ -217,8 +202,6 @@ public:
 };
 
 //this groups together the nodes with the same var-state
-//  NOTE: cluster is misleading ...better situation? frame? circumstance? eventuality? 
-
 class RRTcluster {
 public:
     RRTcluster();
@@ -235,7 +218,6 @@ public:
         
         number_of_clusters++;
 
-        //return nodes.size()-1;
         return number_of_clusters-1;
     }
 
@@ -265,7 +247,6 @@ public:
     int findCluster(std::unordered_map<std::string, bool>& nvar);
 
     inline int size(){
-        //return nodes.size();
         return number_of_clusters;
     }
 
@@ -292,8 +273,8 @@ public:
     std::vector< std::vector<int> > nodes;
     //the initial state is the first explored
     
-    //optimization: skip accomplished tasks! -> not working in general, it depends on the starting node of the forest!! 
-    std::vector< std::unordered_map<std::string, bool> > accomplished; //list of the accomplished tasks of the cluster
+    //list of the accomplished tasks of the cluster (for statistics)
+    std::vector< std::unordered_map<std::string, bool> > accomplished; 
     
     //debug, number of times this cluster is sampled
     std::vector< int > sampled;
@@ -308,8 +289,6 @@ public:
     
     TM_RRTplanner(std::string path_to_node_directory, std::string domain_file_name) ;
 
-    //plan = plan_rrt_simple(S_init,S_goal,plan,60,5,path_len); //example of a call
-
     void set_goal_state(std::unordered_map<std::string, bool> &tS_goal, Pose3d &bS_goal);
 
     void set_initial_state(std::unordered_map<std::string, bool> &tS_init, Pose3d &bS_init);
@@ -317,12 +296,9 @@ public:
     void set_initial_state(Pose3d &bS_init);
 
     //rrt_timeout is secs
-    //std::vector<PlanStepTM> plan_rrt_simple(double rrt_timeout = 0.1, double horizon = 2, double rrt_step = 0.5);
-    std::vector<PlanStepTM> plan_rrt_simple(State& start, State& goal, std::vector<PlanStepTM>& rrt_plan, double rrt_timeout = 0.1, double horizon = 2, double rrt_step = 0.5);
+    std::vector<PlanStepTM> plan_TM_RRT(State& start, State& goal, std::vector<PlanStepTM>& rrt_plan, double rrt_timeout = 0.1, double horizon = 2, double rrt_step = 0.5);
 
-    std::vector<PlanStepTM> plan_rrt_naive(State& start, State& goal, std::vector<PlanStepTM>& rrt_plan, double rrt_timeout = 0.1, double horizon = 2, double rrt_step = 0.5);
-
-    std::vector<PlanStepTM> plan_divided_BFS(State& start, State& goal, std::vector<PlanStepTM>& rrt_plan, double rrt_timeout = 0.1, double horizon = 2, double rrt_step = 0.5, double low_level_rrt_timeout = 5.0);
+    std::vector<PlanStepTM> plan_BFS_RRT(State& start, State& goal, std::vector<PlanStepTM>& rrt_plan, double rrt_timeout = 0.1, double horizon = 2, double rrt_step = 0.5, double low_level_rrt_timeout = 5.0);
 
 
     std::vector< PlanStepTM > transform_plan(std::vector< PlanStepTM > vec, std::string in_frame, std::string out_frame);
@@ -364,15 +340,12 @@ public:
     
     void draw_tree(RRTree rrt, cv::Scalar color, double m2px = 100, double offset = RRT_DRAW_MAP_SIZE / 2);
     
-    // on(c2,p3) draw_cluster_poses(RRTree t, RRTcluster c, "on(c2,p3)")
-    //returns the id of the cluster
     int draw_cluster_poses(RRTree t, RRTcluster c, std::vector<std::string> var);
 
     void draw_cluster_poses(RRTree t, RRTcluster c, int id);
 
     void cout_cluster(RRTcluster c, State _goal, bool truthset_only = false);
 
-    //lpots only id, number of nodes and distance
     void cout_less_cluster(RRTcluster c, State _goal);
 
 //private:
@@ -391,49 +364,21 @@ public:
 
     std::vector<Point3d> compute_dynamic_obstacles(State &state, std::vector<Point3d> &obs);
 
-    //WARNING: this function is context specific!!!
     std::vector<Point3d> add_object_to_obstacles(std::string obj_name, State &state);
 
-    //WARNING: this function is context specific!!!
     std::vector<Point3d> add_object_to_obstacles(std::string obj_name, State &state, std::vector<Point3d> &obs);
 
     std::vector<Point3d> remove_carrying_from_obstacles(State &state, std::vector<Point3d> &obs, double consis_margin = 0.02);
 
-    //WARNING: this function is context specific!!!
     std::vector<Point3d> remove_object_from_obstacles(std::string obj_name, State &state, std::vector<Point3d> &obs, double consis_margin = 0.02);
 
-    /** check if the pose is consistent adapting robot len considering the state
-     *
-     * @param state: the state to be checked pose and variables
-     * @return 0 if the pose is colliding, otherwise the distance with the closer
-     *      obstacle is returned.
-     * 
-     * //WARNING: this function is context specific!!!
-     */
     double is_pose_consistent(State &state, double consis_margin = 0.02);
 
-    /** check if the pose is consistent adapting robot len considering the state
-     *
-     * @param state: the state to be checked pose and variables
-     * @param obstacles: the obstacles you can find in the current state
-     * @return 0 if the pose is colliding, otherwise the distance with the closer
-     *      obstacle is returned.
-     * 
-     * //WARNING: this function is context specific!!!
-     */
     double is_pose_consistent(State &state, std::vector<Point3d> &updated_obstacles, double consis_margin = 0.02);
 
-    /** check if the pose is consistent (ie. not colliding obstacles)
-     *
-     * @param pose: the pose to be checked (x,y,yaw)
-     * @param r_len, r_wid: robot length and robot width respectively
-     * @return 0 if the pose is colliding, otherwise the distance with the closer
-     *      obstacle is returned.
-     */
     double is_pose_consistent(Pose3d pose, double r_len, double r_wid, std::vector<Point3d> &obs, double consis_margin = 0.02);
 
     //distance between poses (3d)
-
     inline double distance(Pose3d p1, Pose3d p2) {
         //Euclidean distance for the linear components (x,y)
         double lin_dist = sqrt(((p1.x - p2.x)*(p1.x - p2.x))+((p1.y - p2.y)*(p1.y - p2.y)));
@@ -448,64 +393,41 @@ public:
         return lin_dist + ang_dist;
     }
 
-    //distance between states-variable-vector (var, motion)
-    //  NOTE: the maps are passed as reference! this avoid the copy which is time consuming
-
+    //distance between states-variable-vector
     inline double distance(std::unordered_map<std::string, bool>& v1, std::unordered_map<std::string, bool>& v2) {
-        //complexity is n*m
-
         if (v1.size() > v2.size())
             return symmetric_difference(v2, v1);
         else
             return symmetric_difference(v1, v2);
     }
 
-
     double symmetric_difference(std::unordered_map<std::string, bool>& v1, std::unordered_map<std::string, bool>& v2);
 
-    //distance between states (var, motion)
-
+    //distance between states (symbolic and geometric)
     inline double distance(State& s1, State& s2) {
 
-        //double w_b = 1;//1; //bottom -> for motion
-        //double w_t = 10; //top    -> for variables
-
-        //weighted-sum [ISSUE: when the goal-pose is close, it can win over the task!]
         double d = w_b * distance(s1.pose, s2.pose) + w_t * distance(s1.var, s2.var);
-
-        //power
-        //double d = distance(s1.pose,s2.pose) * std::pow( 10 , distance(s1.var, s2.var) );
 
         //sum both distances
         return d;
     }
 
-    //distance between states (optimized)
+    //distance between states
     //  NOTE: you can provide the symmetric distance to avoid computation (time optimization)
-
     inline double distance(State& s1, State& s2, double symm_distance) {
 
-        //double w_b = 1;//1; //bottom -> for motion
-        //double w_t = 10; //top    -> for variables
-
-        //weighted-sum [ISSUE: when the goal-pose is close, it can win over the task!]
         double d = w_b * distance(s1.pose, s2.pose) + w_t * symm_distance;
-
-        //power
-        //double d = distance(s1.pose,s2.pose) * std::pow( 10 , distance(s1.var, s2.var) );
 
         //sum both distances
         return d;
     }
 
     //simple euclidean distance (skip the yaw)
-
     inline double distance2d(Pose3d p1, Pose3d p2) {
         return sqrt(((p1.x - p2.x)*(p1.x - p2.x))+((p1.y - p2.y)*(p1.y - p2.y)));
     }
 
     //compute the line between 2 poses, returns a, b and c of the line
-
     inline void getLine(Pose3d l1, Pose3d l2, double &a, double &b, double &c) {
         a = l1.y - l2.y;
         b = l2.x - l1.x;
@@ -513,12 +435,10 @@ public:
     }
 
     //compute the distance from p to the line touching l1 and l2
-
     inline double distance_from_line(Pose3d l1, Pose3d l2, Pose3d p) {
         //compute the line
         double a, b, c;
         getLine(l1, l2, a, b, c);
-        //return std::abs(a * p.x + b * p.y + c) / std::sqrt(a * a + b * b);
         //if the 2 points are the same
         if (a * a + b * b == 0)
             return 0;
@@ -530,13 +450,10 @@ public:
 
     void update_obstacles_from_FILE(std::string path_to_map = "");
 
-    //transform a vector of points from robot to world frame
     std::vector<Point3d> robot2world_frame(std::vector<Point3d> vec);
 
-    //OPTIMIZATION of RRT: find shortcuts bypassing noisy paths
     std::vector<PlanStepTM> random_shortcut_plan(std::vector<PlanStepTM>& in_plan, double rs_timeout = 0.01);
 
-    //get the plan-step that is closer to the current robot pose
     int get_nearest_plan_step();
 
     bool check_plan();
@@ -570,28 +487,20 @@ public:
     
     Step3d step_in_direction(State& s1, State& s2, State& g);
 
-    //steer functions (RRT)
     Step3d step_in_direction(Pose3d p1, Pose3d p2, Pose3d goal);
 
-    //states have to be the same vars!!
     std::vector< PlanStepTM > path_in_direction(State& s_start, State& s_stop, Pose3d& p_goal, double stop_distance = 1);
 
     Pose3d estimate_new_pose(Pose3d p, Step3d s);
 
     inline double fRand(double fMin, double fMax) {
-        // double f = (double)rand() / RAND_MAX;
-        // return fMin + f * (fMax - fMin);
-
         std::uniform_real_distribution<double> unif(fMin, fMax);
-        // std::default_random_engine re;
-        return unif(random_generator); //unif(re);
+        return unif(random_generator);
     }
 
     inline int iRand(int iMin, int iMax) {
-        // return rand() % iMax + iMin;
         std::uniform_int_distribution<int> unif(iMin, iMax);
-        // std::default_random_engine re;
-        return unif(random_generator); //unif(re);
+        return unif(random_generator);
     }
 
     double median(std::vector<double> scores);
@@ -604,12 +513,9 @@ public:
 
     
 //attributes
-
     
     swipl_interface *swi;
 
-    //the "w" com is 0
-    //std::vector<Pose3d> obstacles;
     std::vector<Point3d> obstacles;
     std::vector<Point3d> laser_points;
 
@@ -656,14 +562,11 @@ public:
     double w_t; //weight of the path (bottom)
     double path_len; //max length of the path
 
-    
-    //std::default_random_engine re;
-    std::mt19937 random_generator; //Standard mersenne_twister_engine seeded with rd()
-    
-    
-    //OPTIMIZATIONS
-    bool second_chance_heuristic;
+    //probability to select the goal as the new particle
+    double P_task_to_goal; //P_s (0.3 default)
+    double P_go_to_goal; //P_c (0.3 default)
 
+    std::mt19937 random_generator; //Standard mersenne_twister_engine seeded with rd()
     
     ros::NodeHandle nh;
     ros::Publisher marker_pub;
@@ -683,7 +586,7 @@ public:
 
     tf::StampedTransform transform;
 
-    //simulation
+    //simple scene simulation
     std::unordered_map<std::string, Object2d> simulation;
 
     std::string map_file;

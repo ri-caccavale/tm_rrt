@@ -27,15 +27,18 @@
 		<!-- <param name="domain_file" type="string" value="domain_3c6p (anomaly2.3).prolog" /> -->
 
 		<!-- TM-RRT -->
-		<!-- <param name="planner_type" type="string" value="simple" /> -->
+		<!-- <param name="planner_type" type="string" value="tm_rrt" /> -->
 		<!-- BFS+RRT -->
-		 <param name="planner_type" type="string" value="divided" /> 
+		 <param name="planner_type" type="string" value="bfs_rrt" /> 
 		
 		<param name="task_selector" type="int" value="0" />
-		<param name="number_of_runs" type="int" value="120" />
+		<param name="number_of_runs" type="int" value="1" />
 		
 		<param name="w_b" type="double" value="1.0" />
 		<param name="w_t" type="double" value="5.0" />
 		<param name="path_len" type="double" value="0.9" />
+		
+		<param name="p_s" type="double" value="0.3" />
+		<param name="p_c" type="double" value="0.3" />
 	</node>
 </launch>

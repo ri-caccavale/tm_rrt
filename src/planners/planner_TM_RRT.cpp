@@ -1,6 +1,6 @@
 #include "../tm_rrt.h"
 
-std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal, std::vector<PlanStepTM>& rrt_plan, double rrt_timeout, double horizon, double rrt_step) {
+std::vector<PlanStepTM> TM_RRTplanner::plan_TM_RRT(State& start, State& goal, std::vector<PlanStepTM>& rrt_plan, double rrt_timeout, double horizon, double rrt_step) {
 
     double stop_distance = 0.01;
 
@@ -11,11 +11,10 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
 
     bool plan_found = false;
 
-    //std::vector<PlanStepTM> oldPlan = rrt_plan;
-    //rrt_plan.clear();
-
     RRTree rrt;
     StepMT void_step;
+
+    //init the root node
     rrt.addNode(start, -1, 0, 100, void_step);
 
     std::cout << "INIT_state: " << std::endl;
@@ -24,7 +23,7 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
     goal.cout(false);
 
     //NOTE: clusters are used to group all RRT nodes having the same symbolic state
-    //      this is a simple optimization to speed-up the search inside the tree
+    //      this is a simple optimization to speed-up the search inside the trees
     RRTcluster rrt_cluster;
     std::vector<int> app = {0};
     rrt_cluster.createCluster(start.var, app);
@@ -32,44 +31,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
     int par_id = 0;
 
     int first_to_delete = 0;
-
-    /*
-    std::cout<<"save old Plan: "<<std::endl;
-
-    //if already have a plan
-    for(auto i=curr_plan_step+1; i<rrt_plan.size(); i++){
-        //if plan is no more consistent
-        double obs_dist = is_pose_consistent(rrt_plan[i].state);
-        if(obs_dist == 0){
-            //skip the rest of the plan
-            //replan = true;
-
-            first_to_delete = i;
-
-            break;
-        }
-
-        //rrt_plan[i].cout();
-
-        //oth. add the element to the open-nodes
-        rrt.addNode(rrt_plan[i].state, par_id,
-                    rrt.cost[par_id] + distance(rrt.node[par_id], rrt_plan[i].state),
-                    obs_dist < rrt.min_obst[par_id] ? obs_dist : rrt.min_obst[par_id],
-                    rrt_plan[i].act );
-
-        par_id++;
-        //add the element to the clusters
-        rrt_cluster.addToCluster(rrt_plan[i].state.var, par_id);
-    }
-
-
-    //delete the rest of the plan
-    rrt_plan.erase(rrt_plan.begin()+first_to_delete, rrt_plan.end() );
-
-    if(curr_plan_step > 0 && curr_plan_step < rrt_plan.size() )
-        rrt_plan.erase(rrt_plan.begin(), rrt_plan.begin()+curr_plan_step );
-     */
-
 
     std::cout << "done! " << std::endl;
 
@@ -80,8 +41,7 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
     double coin;
 
     //SELECT RANDOM VAR-STATE
-    double P_select_var = 0.5;
-    double P_task_to_goal = 0.3;
+    double P_select_var = 0.5; //probability to select true or false symbolic variable
     std::unordered_map < std::string, bool> v_random;
 
     //FIND NEAREST CLUSTER
@@ -89,9 +49,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
     int best_c = -1;
     double best_c_dist = 1000;
     double c_dist = 0;
-
-    //define the probability to select the goal as the new particle
-    double P_go_to_goal = 0.3;
 
     Task t_rand;
     Pose3d t_rand_goal;
@@ -130,7 +87,9 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
     while ( ( rrt_timeout < 0 || elapsed_secs < rrt_timeout ) && !plan_found) {
         n_samples++;
 
-        //SELECT RANDOM VAR-STATE
+        //---------- RANDOM_STATE ----------//
+
+        //SELECT RANDOM VAR-STATE (RANDOM_SYM)
         v_random.clear();
 
         coin = fRand(0, 1);
@@ -152,7 +111,7 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
             going_to_goal = false;
         }
 
-        //FIND NEAREST CLUSTER
+        //FIND NEAREST CLUSTER (NEAREST_SYM)
         vec_c_best.clear();
         best_c = -1;
         best_c_dist = 1000;
@@ -176,6 +135,8 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
         //select randomly the best cluster among those with the same (min) distance
         best_c = vec_c_best[ iRand(0, vec_c_best.size() - 1) ];
 
+        //FIND THE ACTION (SELECT_ACTION)
+
         //find best task from the best cluster_var to the rand_var
         Task t_rand = task_in_direction(rrt_cluster.vars[best_c], v_random, mode); //selector
 
@@ -185,13 +146,13 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
             continue;
         }
 
-        //SELECT RANDOM POSE
+        //SELECT RANDOM CONFIGURATION AND GOAL (RAND_CONF)
 
         //flip a float-coint between 0 and 1
         coin = fRand(0, 1);
         //if goal particle is selected
         if (coin <= P_go_to_goal){
-            //set the random pose as the goal pose
+            //set the random pose as the goal pose (G)
             t_rand_goal = find_pose(rrt_cluster.vars[best_c], t_rand.target);
             //p_random = goal.pose;
             p_random = t_rand_goal;
@@ -201,7 +162,7 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
             p_random = Pose3d(fRand(-horizon, horizon), fRand(-horizon, horizon), fRand(-180, 180));
         }
 
-        //create the random state
+        //create the random combined state
         S_random = State(v_random, p_random);
 
         if (t_rand.name == "") {
@@ -213,10 +174,12 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
         // std::cout<<"RANDOM_state: "<<std::endl;
         // S_random.cout();
 
+        //---------- EXTEND ----------//
+
         seed::time::Clock tester;
         tester.tic();
 
-        //FIND NEAREST NODE OF THE RRT (here we use the weighted-distance!)
+        //FIND NEAREST NODE OF THE RRT (here we use the weighted-distance!) (NEAREST_NEIGHBOR)
         S_near_index = 0;
         S_near_cluster = 0;
         S_near_best_distance = 10000;
@@ -257,37 +220,30 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
             }
         }
 
+        //in case no best distance is found
         if (S_near_best_distance >= 10000) {
             state_over_num++;
             continue; //the task is over
         }
 
+        //counter for statistics
         rrt_cluster.sampled[S_near_cluster]++;
 
         record_time += tester.toc();
 
+        //FIND MOTION in the random direction (NEW_STATE)
+        //      NOTE: here we use the previously sampled symbolic action 
+
         //STEERING -> perform a path in the direction of p_random
         Pose3d task_target_pose = find_pose(S_near.var, t_rand.target);
-        std::vector<PlanStepTM> motion_plan = path_in_direction(S_near, S_random, task_target_pose, rrt_step); //works with 0.5m
-        
-        //optional second chance heuristic (NOT USED)
-        if(second_chance_heuristic && motion_plan.size() <= 0){
-            
-            if(debug_on)
-                std::cout<<ansi::yellow << "second chance!" << ansi::end << std::endl;
-            
-            //try another node of the rrt ...find an alternative way
-            S_near_index = rrt_cluster.nodes[S_near_cluster][ iRand(0,rrt_cluster.nodes[S_near_cluster].size()-1) ];
-            S_near = rrt.node[ S_near_index ];
-            
-            motion_plan = path_in_direction(S_near, S_random, task_target_pose, rrt_step);
-        }
+        std::vector<PlanStepTM> motion_plan = path_in_direction(S_near, S_random, task_target_pose, rrt_step);
 
-
-        //if the path is consistent
+        //if the path is consistent (CHECK)
         if (motion_plan.size() > 0) { //non-trivial trajectory
             
             State S_final;
+
+            //add the segment to the RRT (ADD_VERTEX + ADD_EDGE)
 
             for (int i = 0; i < motion_plan.size(); i++) {
 
@@ -420,6 +376,8 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
 
     }
 
+    // FIND SOLUTION: EXTRACT THE PALN FROM THE RRT 
+
     if (!plan_found)
         std::cout << "NO SOLUTION FOUND IN " << elapsed_secs << " secs" << std::endl;
 
@@ -436,7 +394,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_rrt_simple(State& start, State& goal
 
     //find the best task
     for (auto j = 0; j < rrt.size(); j++) {
-        //NOTE: if the var-state is not reached, the pose distance have to be computed from the task-goal-pose!!
         double curr_task_dist, curr_goal_dist;
 
         if (rrt.act[j].task.name != "") {

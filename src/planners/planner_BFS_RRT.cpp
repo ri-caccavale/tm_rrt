@@ -1,6 +1,6 @@
 #include "../tm_rrt.h"
 
-std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goal, std::vector<PlanStepTM>& rrt_plan, double rrt_timeout, double horizon, double rrt_step, double low_level_rrt_timeout) {
+std::vector<PlanStepTM> TM_RRTplanner::plan_BFS_RRT(State& start, State& goal, std::vector<PlanStepTM>& rrt_plan, double rrt_timeout, double horizon, double rrt_step, double low_level_rrt_timeout) {
 
     double stop_distance = 0.01;
 
@@ -11,8 +11,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
 
     bool plan_found = false;
 
-    //std::vector<PlanStepTM> oldPlan = rrt_plan;
-    //rrt_plan.clear();
 
     RRTree rrt;
     StepMT void_step;
@@ -28,14 +26,9 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
     rrt_cluster.createCluster(start.var, app);
 
     int par_id = 0;
-
     int first_to_delete = 0;
 
-
-
     std::cout << "done! " << std::endl;
-
-
 
     //INITIALIZATIONS - begin
 
@@ -98,7 +91,7 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
 
     int tp_trial_counter = 0;
 
-    //randomize the order of how the tasks are explored
+    //randomize the order of how the symbolic actions are explored
     std::cout<<"TP, randomizing tasks: "<<std::endl;
     std::vector<Task> original_task_set = task_set;
     task_set.clear();
@@ -153,12 +146,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
             tp_states.pop_front();
             tp_plans.pop_front();
 
-            //for (auto it = current_plan.begin(); it != current_plan.end(); ++it){
-            //    std::cout << it->name << " ";
-            //}
-            //std::cout<<std::endl;
-            //sleep(1);
-
             //if goal state is reached (symbolic distance is 0)
             if(distance(new_v_state, goal.var) < 0.1){
                 tp_found  = true;
@@ -210,21 +197,20 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
         std::unordered_map<std::string, bool> v_current = start.var;
         int current_cluster = 0;
 
-        //double low_level_rrt_timeout = 5.0; //1.0; //seconds
         double low_level_elapsed_secs = elapsed_secs + low_level_rrt_timeout;
 
-        //-- RRT
+        //-- RRT started
+        // step-by-step expansion of the plan (current_plan)
         while( elapsed_secs < low_level_elapsed_secs && ( rrt_timeout < 0 || elapsed_secs < rrt_timeout ) && !plan_found) {
 
             timer.tic();
 
             n_samples++;
 
-            //get task from the plan
+            //next symbolic action from the symbolic plan
             Task t_current = current_plan.front();
 
-            //std::cout<<"rrt, current_task: "<<t_current.name<<std::endl;
-
+            //explore the configuration space to find t_current.target
 
             //SELECT RANDOM POSE
 
@@ -245,25 +231,18 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
             //create the random state
             S_random = State(v_current, p_random);
 
-            // std::cout<<"RANDOM_state: "<<std::endl;
-            // S_random.cout();
-
             seed::time::Clock tester;
             tester.tic();
 
-            //std::cout<<"rrt, sampled "<<std::endl;
-
-            //FIND NEAREST NODE OF THE RRT (here we use the weighted-distance!)
+            //FIND NEAREST NODE OF THE RRT
             S_near_index = 0;
             S_near_cluster = current_cluster; //0;
             S_near_best_distance = 10000;
             S_near_current_distance = -1;
 
-
-
             //now.. for each node of the cluster
             for (auto j = 0; j < rrt_cluster.nodes[current_cluster].size(); j++) {
-                //compute the current distance (with the given symm_distance of the corresponding cluster)
+                //compute the current distance (the ymm_distance is set to 0 to be ignored)
                 S_near_current_distance = distance(rrt.node[ rrt_cluster.nodes[current_cluster][j] ], S_random, 0.0);
 
                 //if it is the first time, or the current distance is lower than the best one
@@ -278,8 +257,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
                     S_near_best_distance = S_near_current_distance;
                 }
             }
-
-            //std::cout<<"rrt, node found "<<std::endl;
             
 
             if (S_near_best_distance >= 10000) {
@@ -296,14 +273,9 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
             Pose3d task_target_pose = find_pose(S_near.var, t_current.target);
             std::vector<PlanStepTM> motion_plan = path_in_direction(S_near, S_random, task_target_pose, rrt_step); //works with 0.5m
             //steer - end
-            
-            //std::cout<<"rrt, steering done "<<std::endl;
 
             //if the path is consistent
-            //if( motion_plan.size() != 0 ){
             if (motion_plan.size() > 0) { //non-trivial trajectory
-
-                //std::cout<<"rrt, steering not trivial "<<std::endl;
                 
                 State S_final;
 
@@ -320,7 +292,7 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
                     State S_new;
                     S_new.var = S_near.var;
 
-                    S_new.pose = motion_plan[i].state.pose; //= estimate_new_pose(S_near.pose,step_new.motion); //compute new position
+                    S_new.pose = motion_plan[i].state.pose;
 
                     S_final = S_new;
                     
@@ -349,8 +321,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
                         step_new.motion.ls = 0;
                         step_new.motion.ts = 0;
 
-                        //double S_new2_cost = distance(S_new,S_near) + rrt.cost[S_near_index]; //DOES IT UPDATE COST?
-
                         gate_state_count[step_new.task.name]++;
                         
                         int new_id2 = rrt.addNode(S_new2, new_id, S_new_cost, S_new_obs, step_new);
@@ -360,10 +330,9 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
 
                         if (distance(S_new2.var, goal.var) < 0.1) {
 
-                            solution_time = elapsed_secs; //timer.toc();
+                            solution_time = elapsed_secs;
 
                             std::cout << ansi::green << "RRT: solution found after " << solution_time << "secs (" << n_samples << " samples)" << ansi::end << std::endl;
-                            //std::cout<<ansi::green<<"     solution obst: "<<S_new_obs<<" meters"<<ansi::end<<std::endl;
                             std::cout << ansi::green << "     solution cost: " << S_new_cost << " meters" << ansi::end << std::endl;
                             std::cout << ansi::green << "     solution rrt-id: " << new_id2 << " steps" << ansi::end << std::endl;
                             //cout_less_cluster(rrt_cluster,goal);
@@ -394,15 +363,13 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
                         //std::cout<<t_current.name<<" done"<<std::endl;
                         current_plan.pop_front();
 
-                        //std::cout<<"\t checking new action: "<< current_plan.front().name << " from State: "<< current_cluster <<std::endl;
-
                         //reset the RRT timeout
                         low_level_elapsed_secs = elapsed_secs + low_level_rrt_timeout;
 
-                        break; //the rest of the path can be discard!
+                        break;
                     }                    
                     //add the new node to the best cluster (the var_state is the same by construction)
-                    else if (i == motion_plan.size() - 1) //this looks faster but absolutely worst!!
+                    else if (i == motion_plan.size() - 1)
                         rrt_cluster.addToCluster(S_near_cluster, new_id);
 
                 }
@@ -434,45 +401,24 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
             //update the elapsed time
             elapsed_secs += timer.toc();
         }
-        // end RRT
+        //-- RRT ended
     }
 
     if (!plan_found)
         std::cout << "NO SOLUTION FOUND IN " << elapsed_secs << " secs" << std::endl;
-/*
-    if(tp_trial_counter > 1){
-        for(auto k=0; k<rrt_cluster.size(); k++){
-            draw_map();
-            draw_cluster_poses(rrt,rrt_cluster,k);
-            rviz_image_plan();
-            sleep(1);
-            ros::spinOnce(); //probably useless
-            char enter;
-            std::cout<<"PRESS ENTER TO CONTINUE..."<<std::endl;
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
-        }
-    }
-*/
 
-    //this have to be done in two steps:
-    //  find the best task then find the best state associated to the best task
 
-    State S_final; //if we are lucky: p_final == goal
+    State S_final;
     double best_goal_dist = 10000;
     double best_task_dist = 10000;
     int index_final = 0;
     std::unordered_map < std::string, bool> task_var;
 
-    //std::cout<<"DEFAULT BEST TASK: "<<rrt.act[0].task.name<<", task_dist: "<<best_task_dist<<", goal_dist: "<<best_goal_dist<<std::endl;
-
     //find the best task
     for (auto j = 0; j < rrt.size(); j++) {
-        //NOTE: if the var-state is not reached, the pose distance have to be computed from the task-goal-pose!!
         double curr_task_dist, curr_goal_dist;
 
         if (rrt.act[j].task.name != "") {
-            //task_var = apply_to_state( rrt.act[j].task, rrt.node[j] );
-            //curr_task_dist = distance( task_var, goal.var );
             curr_task_dist = distance(rrt.node[j].var, goal.var);
             curr_goal_dist = distance(rrt.node[j].pose, find_pose(rrt.node[j].var, rrt.act[j].task.target));
         } else
@@ -485,18 +431,15 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
             index_final = j;
             best_goal_dist = curr_goal_dist;
             best_task_dist = curr_task_dist;
-            //std::cout<<"NEW BEST TASK FROM NODE "<<j<<" IS: "<<rrt.act[j].task.name<<", task_dist: "<<best_task_dist<<", goal_dist: "<<best_goal_dist<<std::endl;
         }
     }
-
-    //std::cout<<"final index: "<<index_final<<std::endl;
 
     //find the path following the selected branch
     int k = index_final;
 
     std::vector<PlanStepTM *> plan_steps;
 
-    double path_dist = 0; //to plot
+    double path_dist = 0; //for plotting
     //for each parents until the start node
     while (k != -1) {
         //add the node to the plan
@@ -514,10 +457,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
         if (parent_index >= 0)
             path_dist += distance2d(rrt.node[k].pose, rrt.node[parent_index].pose);
 
-        //if(rrt.act[k].task.name == "")
-        //    std::cout<<ansi::red<<"TASK IN THE PLAN IS NULL!!!"<<ansi::end<<std::endl;
-
-        //rrt_plan.insert(rrt_plan.begin(), *ps);
         plan_steps.push_back(ps);
 
         k = parent_index;
@@ -534,39 +473,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_divided_BFS(State& start, State& goa
             std::cout << "\t " << plan_steps[cd]->act.task.name << std::endl;
         }
     }
-/*
-    std::cout << ansi::cyan;
-    std::cout << "RRT-report" << std::endl;
-    std::cout << "\t final index: " << index_final << std::endl;
-    std::cout << "\t samples: " << n_samples << std::endl;
-    for(auto it = gate_state_count.begin(); it != gate_state_count.end(); it++)
-        std::cout << "\t\t gates of " << it->first << ": "<< it->second << std::endl;
-    std::cout << "\t rejected: " << n_samples_rejected << std::endl;
-    std::cout << "\t rejected (not-exists): " << not_exists_num << std::endl;
-    std::cout << "\t rejected (state-over): " << state_over_num << std::endl;
-    std::cout << "\t looping paths: " << path_looping_count << std::endl;
-    std::cout << "\t rrt-size: " << rrt.size() << std::endl;
-    std::cout << "\t plan-size: " << rrt_plan.size() << std::endl;
-    std::cout << "\t subtasks: " << n_accomplished << std::endl;
-    std::cout << "\t solution cost: " << rrt.cost[index_final] << std::endl;
-    std::cout << "\t solution euclid dist: " << path_dist << std::endl;
-    std::cout << "\t solution dist-to-goal: " << distance(rrt.node[index_final], goal) << std::endl;
-    std::cout << "\t solution euclid dist-to-goal: " << distance(rrt.node[index_final].pose, goal.pose) << std::endl;
-
-    std::cout << "EXPLORED clusters:" << std::endl;
-    //rrt_cluster.cout();
-    //cout_cluster(rrt_cluster, goal);
-    cout_cluster(rrt_cluster, goal, true); //only truthset
-    std::cout << ansi::end;
-
-    for (auto i = 0; i < rrt_cluster.size(); i++)
-        if (distance(rrt_cluster.vars[i], goal.var) == 5) {
-            std::cout << "PLOTTING: " << std::endl;
-            rrt_cluster.cout(i);
-            draw_cluster_poses(rrt, rrt_cluster, i);
-            break;
-        }
-*/
 
     std::stringstream ss;
     ss << solution_time << "\t" << n_samples << "\t" << n_samples_rejected << "\t" << rrt_plan.size() << "\t" << path_dist << "\t" << rrt.cost[index_final] << "\t" << n_accomplished_in_plan << "\t" << tp_elapsed_secs; //<<"\t"<< record_time;

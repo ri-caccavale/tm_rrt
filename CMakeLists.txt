@@ -138,8 +138,8 @@ include_directories(
 
 add_executable(tm_rrt 
       src/tm_rrt.cpp
-      src/planners/planner_simple.cpp
-      src/planners/planner_divided_BSF.cpp
+      src/planners/planner_TM_RRT.cpp
+      src/planners/planner_BFS_RRT.cpp
       src/main.cpp
       src/swipl_interface/swipl_interface.cpp
       )
