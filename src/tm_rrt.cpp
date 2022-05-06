@@ -13,7 +13,6 @@ Task::Task(std::string nname, std::vector<std::string>& npre, std::vector<std::s
     this->post_conditions = npost;
     this->target = ntarget;
 }
-// Overload = operator to set from Step3d.
 
 Task Task::operator=(Task a) {
     this->name = a.name;
@@ -38,8 +37,6 @@ Step3d::Step3d(double nfs, double nls, deg180 nts) {
     ls = nls * MOTIONPLANNER_STEP_LS;
     ts = nts * MOTIONPLANNER_STEP_TS;
 };
-
-// Overload = operator to set from Step3d.
 
 Step3d Step3d::operator=(Step3d a) {
     this->fs = a.fs;
@@ -257,7 +254,6 @@ int RRTree::addNode(State& nnode, int nid, double ncost, double nobs, StepMT& na
 }
 
 //get the path starting from the slected index (node)
-
 std::vector<PlanStepTM> RRTree::path(int index) {
 
     std::vector<PlanStepTM> rrt_path;
@@ -275,7 +271,6 @@ std::vector<PlanStepTM> RRTree::path(int index) {
         //add the node to the plan
         int parent_index = parent[k];
         PlanStepTM ps;
-        //ps.act = action_in_direction( rrt.node[parent_index], rrt.node[k] , goal);
         ps.act = act[k];
         ps.state = node[parent_index];
         ps.cost = cost[parent_index];
@@ -501,7 +496,7 @@ void TM_RRTplanner::domain_from_PROLOG() {
         std::cout<<"POSE: "<<ston(pose_vec[2])<<" "<<ston(pose_vec[3])<<" "<<ston(pose_vec[4])<<std::endl;
     }
 
-    //load map - if exists -
+    //load map
     std::vector<std::string> map_vec = swipl_interface::list2vector(swipl_interface::functor2vector(swi->query("map(M)"))[1]);
     if (map_vec.size() > 0) {
         map_file = map_vec[0];
@@ -521,8 +516,7 @@ void TM_RRTplanner::domain_from_PROLOG() {
         for (int i = 0; i < goal_from_ltm.size(); i++)
             tS_goal[goal_from_ltm[i]] = true;
 
-        Pose3d bS_goal(0.0, 0.0, 0.0); //this is more or less useless
-        //Pose3d bS_goal(-2,0,0); //pose p2
+        Pose3d bS_goal(0.0, 0.0, 0.0); 
         S_goal = State(tS_goal, bS_goal);
     } else
         std::cout << "WARNING: goal-state was not present in the PROLOG file" << std::endl;
@@ -547,7 +541,8 @@ void TM_RRTplanner::domain_from_PROLOG() {
 
 
 
-//find the pose of an object, it can recursively search if an object is "on" another one!
+//find the target pose
+//  here we simply associate a pose to a term but more complex strategies can be defined
 Pose3d TM_RRTplanner::find_pose(std::unordered_map<std::string, bool>& var, std::string toFind) {
     std::vector<std::string> varVector;
 
@@ -999,7 +994,7 @@ void TM_RRTplanner::update_obstacles_from_FILE(std::string path_to_map) {
         jx = j;
         for (int i = 0; i < map_img.cols; i++) {
             iy = i;
-            if (map_img.at<uchar>(j, i) < 128) { //black!
+            if (map_img.at<uchar>(j, i) < 128) { //black
                 //remember that the origin of the map is in the middle of the image!
                 obstacles.push_back(Point3d(-(jx - x_off) * px2meters, -(iy - y_off) * px2meters, 0)); //now it is in map frame!
             }
@@ -1023,121 +1018,6 @@ std::vector<Point3d> TM_RRTplanner::robot2world_frame(std::vector<Point3d> vec) 
     }
     //return the vector
     return vec;
-}
-
-
-//OPTIMIZATION of RRT: find shortcuts bypassing noisy paths (NOT USED)
-std::vector<PlanStepTM> TM_RRTplanner::random_shortcut_plan(std::vector<PlanStepTM>& in_plan, double rs_timeout) {
-    double stop_distance = 0.01;
-
-    std::vector<PlanStepTM> out_plan;
-
-    //if plan is too small
-    if (in_plan.size() < 2)
-        //do nothing
-        return in_plan;
-
-    out_plan = in_plan;
-    //start the clock
-    double elapsed_secs = 0;
-    clock_t end_clock;
-    clock_t begin_clock = clock();
-    //while u have time
-    while (elapsed_secs < rs_timeout) {
-
-        //probability to optimize the initial part of the plan
-        double P_optimize_init = 0.3;
-        //flip a float-coint between 0 and 1
-        double coin = fRand(0, 1);
-
-        //get two random steps of the plan
-        int r_start, r_stop;
-
-        //if initial part is selected
-        if (coin <= P_optimize_init) {
-            r_start = 0;
-            r_stop = iRand(r_start + 1, out_plan.size() - 1);
-        } else {
-            r_start = iRand(0, out_plan.size() - 2);
-            r_stop = iRand(r_start + 1, out_plan.size() - 1);
-        }
-
-        State s_curr = out_plan[r_start].state;
-        State s_stop = out_plan[r_stop].state;
-        State s_goal = out_plan[out_plan.size() - 1].state;
-
-        std::vector<PlanStepTM> shortcut;
-        shortcut.clear();
-
-        bool shortcut_broken = false;
-        bool shortcut_found = false;
-        //while the shortcut is not found and not broken (shortcut failed)
-        while (!shortcut_broken && !shortcut_found) {
-            //make a step from the last element of the shortcut to the stop pose
-            StepMT step_new = action_in_direction(s_curr, s_stop, s_goal);
-            State s_new;
-            s_new.pose = estimate_new_pose(s_curr.pose, step_new.motion);
-            s_new.var = s_curr.var;
-            //if the shortcut is too big, we assume it is going nowhere
-            if (shortcut.size() + 1 > 100) {
-                //the current shortcut is broken
-                shortcut_broken = true;
-                continue;
-            }
-            //if the new step is free from obstacles
-            double obs_dist = is_pose_consistent(s_new);
-            if (obs_dist > 0) {
-                //and does not reduce the distance from obstacles
-                if (obs_dist < out_plan[out_plan.size() - 1].min_obst) {
-                    shortcut_broken = true;
-                    continue;
-                }
-                //check if the stop pose is reached
-                if (distance(s_new.pose, s_stop.pose) <= 0.01 && distance(s_new.var, s_stop.var) == 0) {
-                    //check if the shortcut is too small
-                    if (shortcut.size() <= 1) {
-                        //in case, it is useless
-                        shortcut_broken = true;
-                        continue;
-                    }
-                    //otherwise we've found a shortcut!
-                    shortcut_found = true;
-                    std::cout << ansi::yellow << "shortcut of size " << shortcut.size() << "found!" << ansi::end << std::endl;
-                    //insert the shortcut into the plan, cutting off the old points
-                    out_plan.erase(out_plan.begin() + r_start + 1, out_plan.begin() + r_stop);
-                    for (auto i = 0; i < shortcut.size(); i++) {
-                        out_plan.insert(out_plan.begin() + r_start + i + 1, shortcut[i]);
-                    }
-
-                }                    
-                //oth. add the pose to the shortcut
-                else {
-                    //compute the closest obstacle from the shortcut
-                    if (shortcut.size() > 0 && shortcut[shortcut.size() - 1].min_obst < obs_dist) {
-                        obs_dist = shortcut[shortcut.size() - 1].min_obst;
-                    }
-                    //insert the step
-                    PlanStepTM ps(s_new, step_new, 0, obs_dist);
-                    shortcut.push_back(ps);
-
-                    //move forward
-                    s_curr = s_new;
-                }
-            }                
-            //oth. we collide an obstacle
-            else {
-                //the shortcut is brocken
-                shortcut_broken = true;
-            }
-        }
-        //update the clock
-        end_clock = clock();
-        elapsed_secs = double(end_clock - begin_clock) / CLOCKS_PER_SEC;
-
-    }
-
-    //return the new (hopefully better) plan
-    return out_plan;
 }
 
 
@@ -1180,6 +1060,8 @@ bool TM_RRTplanner::check_plan() {
     return consis;
 }
 
+// functions for the update and the check of the symbolic states
+
 std::unordered_map<std::string, bool> TM_RRTplanner::apply_to_state(Task& t, State& s) {
     return apply_to_state(t, s.var);
 }
@@ -1187,11 +1069,15 @@ std::unordered_map<std::string, bool> TM_RRTplanner::apply_to_state(Task& t, Sta
 std::unordered_map<std::string, bool> TM_RRTplanner::apply_to_state(Task& t, std::unordered_map<std::string, bool>& v) {
     std::vector<std::string> cond = t.post_conditions;
     std::unordered_map < std::string, bool> new_v = v;
-
+    //for each effect
     for (auto i = 0; i < cond.size(); i++) {
+        //if is neagated
         if (cond[i].substr(0, 1) == "-")
+            //put it to false in the new symbolic state
             new_v[ cond[i].substr(1, cond[i].size()) ] = false;
+        //otherwise
         else
+            //put it to true in the new symbolic state
             new_v[ cond[i] ] = true;
     }
     return new_v;
@@ -1208,14 +1094,17 @@ bool TM_RRTplanner::is_applicable(Task& t, std::unordered_map<std::string, bool>
 
     bool consis = true;
     int i = 0;
-
+    //for each effect, if the node is still consistent
     while (i < cond.size() && consis) {
+        //if an unsatisfied precondition is found
         if ((cond[i].substr(0, 1) == "-" && v[ cond[i].substr(1, cond[i].size()) ] == true) ||
                 cond[i].substr(0, 1) != "-" && v[ cond[i] ] == false) {
+            //thsi action is not applicable
             consis = false;
         }
         i++;
     }
+    //if nothing happens the action is applicable
     return consis;
 }
 
@@ -1483,8 +1372,8 @@ std::vector< PlanStepTM > TM_RRTplanner::path_in_direction(State& s_start, State
         }            
         //oth. collided
         else {
-            //return path; //partial path
-            return std::vector<PlanStepTM>(); //empty path
+            //return path; //return partial path
+            return std::vector<PlanStepTM>(); //return empty path
         }
     }
 

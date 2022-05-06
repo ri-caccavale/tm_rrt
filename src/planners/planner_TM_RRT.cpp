@@ -152,9 +152,8 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_TM_RRT(State& start, State& goal, st
         coin = fRand(0, 1);
         //if goal particle is selected
         if (coin <= P_go_to_goal){
-            //set the random pose as the goal pose (G)
+            //set the random pose as the goal pose (apply G function)
             t_rand_goal = find_pose(rrt_cluster.vars[best_c], t_rand.target);
-            //p_random = goal.pose;
             p_random = t_rand_goal;
         }
         //oth.
@@ -273,18 +272,9 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_TM_RRT(State& start, State& goal, st
 
                 S_near_index = new_id;
 
-                // std::cout<<ansi::green<<"\t\t   goal_dist (pose): "<<distance( S_new.pose, step_new.task.target_pose( S_new.var ) )<<ansi::end<<std::endl;
-                // std::cout<<"\t\t   goal_dist (state): "<<distance( S_new, goal )<<std::endl;
-
-//                        //PLOT THE WHOLE CLUSTER
-//                        if(S_new.var["on(c1,p4)"] && S_new.var["on(c2,p2)"]){
-//                            std::cout<<"   -in-   "<<std::endl;
-//                            S_new.cout_true();
-//                            step_new.cout();
-//                        }
-
                 //CHECK if subgoal is reached
                 if (is_pose_reached(S_new.pose, find_pose(S_new.var, step_new.task.target))) {
+                    // here we set the new symbolic state to the final step of the trajectory
                     n_accomplished++;
                     //add another node with the updated var state!
                     State S_new2 = S_new;
@@ -300,7 +290,7 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_TM_RRT(State& start, State& goal, st
                     
                     int new_id2 = rrt.addNode(S_new2, new_id, S_new_cost, S_new_obs, step_new);
 
-                    //flag this task as accomplished in the current cluster
+                    //flag this task as accomplished in the current cluster (for statistics)
                     rrt_cluster.accomplished[S_near_cluster][step_new.task.name] = true;
 
                     if (distance(S_new2.var, goal.var) < 0.1) {
@@ -308,10 +298,8 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_TM_RRT(State& start, State& goal, st
                         solution_time = timer.toc();
 
                         std::cout << ansi::green << "RRT: solution found after " << solution_time << "secs (" << n_samples << " samples)" << ansi::end << std::endl;
-                        //std::cout<<ansi::green<<"     solution obst: "<<S_new_obs<<" meters"<<ansi::end<<std::endl;
                         std::cout << ansi::green << "     solution cost: " << S_new_cost << " meters" << ansi::end << std::endl;
                         std::cout << ansi::green << "     solution rrt-id: " << new_id2 << " steps" << ansi::end << std::endl;
-                        //cout_less_cluster(rrt_cluster,goal);
 
                         plan_found = true; //exit when the first plan is found!
                     }
@@ -329,10 +317,8 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_TM_RRT(State& start, State& goal, st
                         else
                             std::cout << "NEW CLUSTER FOUND from " << S_near_cluster << " to " << new_cluster_index << " via " << step_new.task.name << "\t" << timer.toc() << "\t" << distance(S_new2.var, goal.var) << std::endl;
                     }
-                    //else
-                    //    std::cout<<"   going from "<<S_near_cluster<<" to "<<new_cluster_index<<" via "<<step_new.task.name<<std::endl;
 
-                    break; //the rest of the path can be discard!
+                    break;
                 }                    
                 //add the new node to the best cluster (the var_state is the same by construction)
                 else if (i == motion_plan.size() - 1)
@@ -341,7 +327,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_TM_RRT(State& start, State& goal, st
             
             if(debug_on){
                 draw_map();
-                //draw_tree(rrt,cv::Scalar(220,220,220));
                 draw_path(partial_path, cv::Scalar(0,100,0));
                 draw_cluster_poses(rrt,rrt_cluster,S_near_cluster);
                 std::vector<Point3d> void_obs;
@@ -359,7 +344,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_TM_RRT(State& start, State& goal, st
             
             if(debug_on){
                 draw_map();
-                //draw_tree(rrt,cv::Scalar(220,220,220));
                 draw_path(partial_path, cv::Scalar(0,0,100));
                 draw_cluster_poses(rrt,rrt_cluster,S_near_cluster);
                 std::vector<Point3d> void_obs;
@@ -384,21 +368,17 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_TM_RRT(State& start, State& goal, st
     //this have to be done in two steps:
     //  find the best task then find the best state associated to the best task
 
-    State S_final; //if we are lucky: p_final == goal
+    State S_final;
     double best_goal_dist = 10000;
     double best_task_dist = 10000;
     int index_final = 0;
     std::unordered_map < std::string, bool> task_var;
-
-    //std::cout<<"DEFAULT BEST TASK: "<<rrt.act[0].task.name<<", task_dist: "<<best_task_dist<<", goal_dist: "<<best_goal_dist<<std::endl;
 
     //find the best task
     for (auto j = 0; j < rrt.size(); j++) {
         double curr_task_dist, curr_goal_dist;
 
         if (rrt.act[j].task.name != "") {
-            //task_var = apply_to_state( rrt.act[j].task, rrt.node[j] );
-            //curr_task_dist = distance( task_var, goal.var );
             curr_task_dist = distance(rrt.node[j].var, goal.var);
             curr_goal_dist = distance(rrt.node[j].pose, find_pose(rrt.node[j].var, rrt.act[j].task.target));
         } else
@@ -411,28 +391,21 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_TM_RRT(State& start, State& goal, st
             index_final = j;
             best_goal_dist = curr_goal_dist;
             best_task_dist = curr_task_dist;
-            //std::cout<<"NEW BEST TASK FROM NODE "<<j<<" IS: "<<rrt.act[j].task.name<<", task_dist: "<<best_task_dist<<", goal_dist: "<<best_goal_dist<<std::endl;
         }
     }
-
-    //std::cout<<"final index: "<<index_final<<std::endl;
 
     //find the path following the selected branch
     int k = index_final;
 
     std::vector<PlanStepTM *> plan_steps;
 
-    double path_dist = 0; //to plot
+    double path_dist = 0;
     //for each parents until the start node
     while (k != -1) {
         //add the node to the plan
         int parent_index = rrt.parent[k];
         PlanStepTM *ps = new PlanStepTM();
-        //ps.act = action_in_direction( rrt.node[parent_index], rrt.node[k] , goal);
         ps->act = rrt.act[k];
-        //ps->state = rrt.node[parent_index];
-        //ps->cost = rrt.cost[parent_index];
-        //ps->min_obst = rrt.min_obst[parent_index];
         ps->state = rrt.node[k];
         ps->cost = rrt.cost[k];
         ps->min_obst = rrt.min_obst[k];
@@ -440,10 +413,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_TM_RRT(State& start, State& goal, st
         if (parent_index >= 0)
             path_dist += distance2d(rrt.node[k].pose, rrt.node[parent_index].pose);
 
-        //if(rrt.act[k].task.name == "")
-        //    std::cout<<ansi::red<<"TASK IN THE PLAN IS NULL!!!"<<ansi::end<<std::endl;
-
-        //rrt_plan.insert(rrt_plan.begin(), *ps);
         plan_steps.push_back(ps);
 
         k = parent_index;
@@ -480,9 +449,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_TM_RRT(State& start, State& goal, st
     std::cout << "\t solution dist-to-goal: " << distance(rrt.node[index_final], goal) << std::endl;
     std::cout << "\t solution euclid dist-to-goal: " << distance(rrt.node[index_final].pose, goal.pose) << std::endl;
     std::cout << "EXPLORED clusters:" << std::endl;
-    //rrt_cluster.cout();
-    //cout_cluster(rrt_cluster, goal);
-    //cout_cluster(rrt_cluster, goal, true); //only truthset
     std::cout << ansi::end;
 
     std::stringstream ss;

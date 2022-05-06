@@ -3,35 +3,14 @@
 
 <launch>
 	<node pkg="tm_rrt" type="tm_rrt" name="tm_rrt" output="screen" >
-		<!-- PlanRob -->
-		<!-- <param name="domain_file" type="string" value="domain_2c3p (PlanRob).prolog" /> -->
-		<!-- ECMR case1 -->
-		<!-- <param name="domain_file" type="string" value="domain_2c4p (local minima).prolog" /> -->
-		<!-- ECMR case2.1 -->
-		<!-- <param name="domain_file" type="string" value="domain_1c2p.prolog" /> -->
-		<!-- ECMR case2.2 -->
-		<!-- <param name="domain_file" type="string" value="domain_2c4p.prolog" /> -->
-		<!-- ECMR case2.3 -->
-		<!-- <param name="domain_file" type="string" value="domain_3c6p.prolog" /> -->
-		<!-- ECMR case2.4 -->
-		<!-- <param name="domain_file" type="string" value="domain_4c8p.prolog" /> -->
-		<!-- JRAS case3.1 -->
-		<!-- <param name="domain_file" type="string" value="domain_2c4p (anomaly2.0).prolog" /> -->
 		<!-- JRAS case3.2 -->
 		 <param name="domain_file" type="string" value="domain_2c4p (anomaly2.1).prolog" /> 
-		<!-- JRAS case3.3 -->
-		<!-- <param name="domain_file" type="string" value="domain_3c6p (anomaly2.2).prolog" /> -->
-		<!-- JRAS case3.4 -->
-		<!-- <param name="domain_file" type="string" value="domain_3c6p (anomaly2.25).prolog" /> -->
-		<!-- JRAS case3.5 -->
-		<!-- <param name="domain_file" type="string" value="domain_3c6p (anomaly2.3).prolog" /> -->
 
 		<!-- TM-RRT -->
-		<!-- <param name="planner_type" type="string" value="tm_rrt" /> -->
+		 <param name="planner_type" type="string" value="tm_rrt" /> 
 		<!-- BFS+RRT -->
-		 <param name="planner_type" type="string" value="bfs_rrt" /> 
+		<!-- <param name="planner_type" type="string" value="bfs_rrt" /> -->
 		
-		<param name="task_selector" type="int" value="0" />
 		<param name="number_of_runs" type="int" value="1" />
 		
 		<param name="w_b" type="double" value="1.0" />

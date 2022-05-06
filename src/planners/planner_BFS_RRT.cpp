@@ -36,7 +36,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_BFS_RRT(State& start, State& goal, s
 
     //SELECT RANDOM VAR-STATE
     double P_select_var = 0.5;
-    double P_task_to_goal = 0.3;
     std::unordered_map < std::string, bool> v_random;
 
     //FIND NEAREST CLUSTER
@@ -44,9 +43,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_BFS_RRT(State& start, State& goal, s
     int best_c = -1;
     double best_c_dist = 1000;
     double c_dist = 0;
-
-    //define the probability to select the goal as the new particle
-    double P_go_to_goal = 0.3;
 
     //Task t_rand;
     Pose3d t_rand_goal;
@@ -126,8 +122,8 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_BFS_RRT(State& start, State& goal, s
     //while you have time
     while ( ( rrt_timeout < 0 || elapsed_secs < rrt_timeout ) && !plan_found) {
 
-        
-        bool tp_found = false; //find next solution
+        //by default task plan is not found
+        bool tp_found = false;
 
         //you should start again from skretch
         rrt_cluster.clear();
@@ -157,8 +153,7 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_BFS_RRT(State& start, State& goal, s
                 //uncomment this to consider planning time also in the total time
                 //elapsed_secs -= (elapsed_secs - tp_starting_time);
 
-                continue;
-                //now current_plan is the BFS plan
+                continue; //now current_plan is the BFS plan
             }
 
             //otherwise, add new tasks to the current plan and push the new plans into the buffer
@@ -200,8 +195,9 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_BFS_RRT(State& start, State& goal, s
         double low_level_elapsed_secs = elapsed_secs + low_level_rrt_timeout;
 
         //-- RRT started
-        // step-by-step expansion of the plan (current_plan)
+        //  we left the same basic RRT implementation as TM_RRT to ensure fairness of competition
         while( elapsed_secs < low_level_elapsed_secs && ( rrt_timeout < 0 || elapsed_secs < rrt_timeout ) && !plan_found) {
+            // step-by-step expansion of the BFS plan (current_plan)
 
             timer.tic();
 
@@ -242,7 +238,7 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_BFS_RRT(State& start, State& goal, s
 
             //now.. for each node of the cluster
             for (auto j = 0; j < rrt_cluster.nodes[current_cluster].size(); j++) {
-                //compute the current distance (the ymm_distance is set to 0 to be ignored)
+                //compute the current distance (the sym_distance is set to 0 to be ignored)
                 S_near_current_distance = distance(rrt.node[ rrt_cluster.nodes[current_cluster][j] ], S_random, 0.0);
 
                 //if it is the first time, or the current distance is lower than the best one
@@ -335,7 +331,6 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_BFS_RRT(State& start, State& goal, s
                             std::cout << ansi::green << "RRT: solution found after " << solution_time << "secs (" << n_samples << " samples)" << ansi::end << std::endl;
                             std::cout << ansi::green << "     solution cost: " << S_new_cost << " meters" << ansi::end << std::endl;
                             std::cout << ansi::green << "     solution rrt-id: " << new_id2 << " steps" << ansi::end << std::endl;
-                            //cout_less_cluster(rrt_cluster,goal);
 
                             plan_found = true; //exit when the first plan is found!
                         }
@@ -439,17 +434,13 @@ std::vector<PlanStepTM> TM_RRTplanner::plan_BFS_RRT(State& start, State& goal, s
 
     std::vector<PlanStepTM *> plan_steps;
 
-    double path_dist = 0; //for plotting
+    double path_dist = 0;
     //for each parents until the start node
     while (k != -1) {
         //add the node to the plan
         int parent_index = rrt.parent[k];
         PlanStepTM *ps = new PlanStepTM();
-        //ps.act = action_in_direction( rrt.node[parent_index], rrt.node[k] , goal);
         ps->act = rrt.act[k];
-        //ps->state = rrt.node[parent_index];
-        //ps->cost = rrt.cost[parent_index];
-        //ps->min_obst = rrt.min_obst[parent_index];
         ps->state = rrt.node[k];
         ps->cost = rrt.cost[k];
         ps->min_obst = rrt.min_obst[k];

@@ -1,13 +1,13 @@
 # tm_rrt testing package
 This package has been designed to assess the performance of the TM-RRT (Task and Motion planner based on Rapidly-exploring Random Trees) considering several problem configurations in hospital-logistic scenario with a mobile robotic platform.
 
-The symbolic knowledge along with the problems formulations are available as Prolog files in the ```domains/``` folder
+The symbolic knowledge along with an example of problem formulation is available as Prolog file in the ```domains/``` folder.
 
-The source code of the planner, based on a naive version of the RRT, is available in the ```src/planners/planner_TM_RRT.cpp``` file
+The source code of the planner, based on a naive version of the RRT, is available in the ```src/planners/planner_TM_RRT.cpp``` file.
 
-For comparison pourposes a divided planner based on simple BFS (symbolic) and RRT (geometric) is available in the ```src/planners/planner_BFS_RRT.cpp``` file
+For comparison pourposes a 2-layer planner based on simple BFS (symbolic) and RRT (geometric) is available in the ```src/planners/planner_BFS_RRT.cpp``` file.
 
-The code is wrapped in a ROS node allowing fast launch and parameter setting. The output of the node is a table in the terminal showing the performance of the selected planner. In addition a 2D graphical representation of generated plans is available from the /image_plan topic.
+The code is wrapped into a ROS node allowing fast launch and parameter setting. The output of the node is a table in the terminal showing the performance of the selected planner. In addition a 2D graphical representation of generated plans is available from the /image_plan topic while the list of the actions is published on the /tm_rrt_plan topic.
 
 ## Installation requirements
 Install and configure ROS from [here](http://wiki.ros.org/ROS/Installation)

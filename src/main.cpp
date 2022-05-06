@@ -43,10 +43,13 @@ int main(int argc, char** argv) {
     double param_p_s = get_ros_param<double>("/tm_rrt/p_s",0.3);
     double param_p_c = get_ros_param<double>("/tm_rrt/p_c",0.3);
 
-    TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "domains/" + param_domain_file);
+    //load symbolic doman and geometric map 
 
+    TM_RRTplanner tmRRT(ros::package::getPath("tm_rrt"), "domains/" + param_domain_file);
     
     tmRRT.update_obstacles_from_FILE();
+
+    //ROS-based drawing and visualization of the map
     
     tmRRT.draw_map(tmRRT.S_init.pose,tmRRT.S_goal.pose);
         
