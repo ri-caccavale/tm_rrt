@@ -542,7 +542,7 @@ void TM_RRTplanner::domain_from_PROLOG() {
 
 
 //find the target pose
-//  here we simply associate a pose to a term but more complex strategies can be defined
+//  here we associate a pose to a term (more complex strategies can be defined)
 Pose3d TM_RRTplanner::find_pose(std::unordered_map<std::string, bool>& var, std::string toFind) {
     std::vector<std::string> varVector;
 
@@ -1119,6 +1119,8 @@ StepMT TM_RRTplanner::action_in_direction(State& s1, State& s2, State& g) {
 
 
 /**** **** **** TASK IN DIRECTION SELECTOR **** **** ****/
+
+// the standard (and default) mode is BEST
 
 Task TM_RRTplanner::task_in_direction(State& s1, State& s2, TaskSelector mode){
     switch( mode ){
