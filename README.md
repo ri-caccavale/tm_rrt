@@ -37,12 +37,4 @@ Please acknowledge the authors in any acedemic publication that used parts of th
   year={2022},
   publisher={Elsevier}
 }
-
-@inproceedings{caccavale2021combining,
-  title={Combining Task and Motion Planning through Rapidly-Exploring Random Trees},
-  author={Caccavale, Riccardo and Finzi, Alberto},
-  booktitle={2021 European Conference on Mobile Robots (ECMR)},
-  pages={1--6},
-  organization={IEEE}
-}
 ```
