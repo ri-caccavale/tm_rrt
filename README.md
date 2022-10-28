@@ -28,6 +28,16 @@ roslaunch tm_rrt tm_rrt.launch
 ## Reference
 Please acknowledge the authors in any acedemic publication that used parts of these codes.
 ```
+@article{caccavale2022rapidly,
+  title={A rapidly-exploring random trees approach to combined task and motion planning},
+  author={Caccavale, Riccardo and Finzi, Alberto},
+  journal={Robotics and Autonomous Systems},
+  volume={157},
+  pages={104238},
+  year={2022},
+  publisher={Elsevier}
+}
+
 @inproceedings{caccavale2021combining,
   title={Combining Task and Motion Planning through Rapidly-Exploring Random Trees},
   author={Caccavale, Riccardo and Finzi, Alberto},
